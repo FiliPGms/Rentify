@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContratoStatus {
+  ATIVO
+  INATIVO
+}
+
+enum ContaStatus {
+  PENDENTE
+  PAGO
+  EM_ATRASO
+}
+
+model Usuario {
+  id              String           @id @default(uuid())
+  nome            String           @db.VarChar(120)
+  email           String           @unique @db.VarChar(180)
+  senhaHash       String           @map("senha_hash") @db.VarChar(255)
+  empreendimentos Empreendimento[]
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@map("usuarios")
+}
+
+model Empreendimento {
+  id          String     @id @default(uuid())
+  usuarioId   String     @map("usuario_id")
+  nome        String     @db.VarChar(140)
+  endereco    String     @db.VarChar(255)
+  valorPadrao Decimal    @map("valor_padrao") @db.Decimal(12, 2)
+  usuario     Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  contratos   Contrato[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@index([usuarioId])
+  @@unique([usuarioId, nome])
+  @@map("empreendimentos")
+}
+
+model Contrato {
+  id                    String              @id @default(uuid())
+  empreendimentoId       String              @map("empreendimento_id")
+  nomeInquilino          String              @map("nome_inquilino") @db.VarChar(140)
+  dataVencimentoPadrao   DateTime            @map("data_vencimento_padrao") @db.Date
+  status                ContratoStatus       @default(ATIVO)
+  empreendimento         Empreendimento      @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
+  contas                Conta[]
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  @@index([empreendimentoId, status])
+  @@map("contratos")
+}
+
+model Conta {
+  id             String      @id @default(uuid())
+  contratoId     String      @map("contrato_id")
+  mesReferencia  DateTime    @map("mes_referencia") @db.Date
+  dataVencimento DateTime    @map("data_vencimento") @db.Date
+  dataPagamento  DateTime?   @map("data_pagamento") @db.Date
+  valor          Decimal     @db.Decimal(12, 2)
+  status         ContaStatus @default(PENDENTE)
+  contrato       Contrato    @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@unique([contratoId, mesReferencia])
+  @@index([status, dataVencimento])
+  @@index([mesReferencia])
+  @@map("contas")
+}

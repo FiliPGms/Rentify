@@ -1,0 +1,137 @@
+const API_BASE = '/api/v1';
+
+type ApiResponse<T> = {
+  success: boolean;
+  data: T;
+  meta?: unknown;
+  error?: { message: string };
+};
+
+export type Empreendimento = {
+  id: string;
+  nome: string;
+  endereco: string;
+  valorPadrao: string;
+};
+
+export type Contrato = {
+  id: string;
+  nomeInquilino: string;
+  dataVencimentoPadrao: string;
+  status: 'ATIVO' | 'INATIVO';
+  empreendimento: { id: string; nome: string; valorPadrao: string };
+};
+
+export type Conta = {
+  id: string;
+  mesReferencia: string;
+  dataVencimento: string;
+  dataPagamento: string | null;
+  valor: string;
+  status: 'PENDENTE' | 'PAGO' | 'EM_ATRASO';
+  contrato: {
+    id: string;
+    nomeInquilino: string;
+    empreendimento: { id: string; nome: string };
+  };
+};
+
+export type DashboardResumo = {
+  faturamentoTotal: number;
+  pendenteTotal: number;
+  atrasadoTotal: number;
+  porEmpreendimento: Array<{ empreendimentoId: string; nome: string; recebido: number }>;
+};
+
+let token = localStorage.getItem('lendario_token') ?? '';
+
+export function setToken(nextToken: string) {
+  token = nextToken;
+  localStorage.setItem('lendario_token', nextToken);
+}
+
+export function clearToken() {
+  token = '';
+  localStorage.removeItem('lendario_token');
+}
+
+export function hasToken() {
+  return Boolean(token);
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers
+    }
+  });
+
+  const json = (await response.json()) as ApiResponse<T>;
+  if (!response.ok || !json.success) {
+    throw new Error(json.error?.message ?? 'Erro inesperado.');
+  }
+
+  return json.data;
+}
+
+export const api = {
+  login: (payload: { email: string; senha: string }) =>
+    request<{ token: string; user: { nome: string; email: string } }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  register: (payload: { nome: string; email: string; senha: string }) =>
+    request<{ token: string; user: { nome: string; email: string } }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  dashboard: () => request<DashboardResumo>('/dashboard/resumo'),
+  empreendimentos: () => request<Empreendimento[]>('/empreendimentos'),
+  createEmpreendimento: (payload: { nome: string; endereco: string; valorPadrao: number }) =>
+    request<Empreendimento>('/empreendimentos', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  contratos: () => request<Contrato[]>('/contratos'),
+  createContrato: (payload: {
+    empreendimentoId: string;
+    nomeInquilino: string;
+    dataVencimentoPadrao: string;
+    status: 'ATIVO' | 'INATIVO';
+  }) =>
+    request<Contrato>('/contratos', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  contas: (filters: { status?: string; empreendimentoId?: string }) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.set('status', filters.status);
+    if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
+    return request<Conta[]>(`/contas?${params.toString()}`);
+  },
+  createConta: (payload: {
+    contratoId: string;
+    mesReferencia: string;
+    dataVencimento: string;
+    valor: number;
+  }) =>
+    request<Conta>('/contas', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  pagarConta: (id: string) =>
+    request<Conta>(`/contas/${id}/pagamento`, {
+      method: 'PATCH',
+      body: JSON.stringify({})
+    }),
+  exportContasUrl: (filters: { status?: string; empreendimentoId?: string }) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.set('status', filters.status);
+    if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
+    return `${API_BASE}/contas/export?${params.toString()}`;
+  },
+  authHeader: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {})
+};
