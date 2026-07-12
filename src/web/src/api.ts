@@ -55,8 +55,14 @@ export function clearToken() {
   localStorage.removeItem('lendario_token');
 }
 
+let unauthorizedListener: (() => void) | null = null;
+
+export function onUnauthorized(callback: () => void) {
+  unauthorizedListener = callback;
+}
+
 export function hasToken() {
-  return Boolean(token);
+  return Boolean(token) && token !== 'undefined' && token !== 'null';
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -68,6 +74,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options.headers
     }
   });
+
+  if (response.status === 401) {
+    clearToken();
+    if (unauthorizedListener) {
+      unauthorizedListener();
+    }
+  }
 
   const json = (await response.json()) as ApiResponse<T>;
   if (!response.ok || !json.success) {

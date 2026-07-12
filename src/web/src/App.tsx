@@ -7,6 +7,7 @@ import {
   DashboardResumo,
   Empreendimento,
   hasToken,
+  onUnauthorized,
   setToken
 } from './api';
 
@@ -14,6 +15,12 @@ const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
 
 export function App() {
   const [authenticated, setAuthenticated] = useState(hasToken());
+
+  useEffect(() => {
+    onUnauthorized(() => {
+      setAuthenticated(false);
+    });
+  }, []);
 
   if (!authenticated) {
     return <AuthScreen onAuthenticated={() => setAuthenticated(true)} />;
@@ -150,6 +157,11 @@ function Shell({ onLogout }: { onLogout: () => void }) {
                   headers: api.authHeader()
                 });
                 if (!response.ok) {
+                  if (response.status === 401) {
+                    clearToken();
+                    onLogout();
+                    return;
+                  }
                   const errorJson = await response.json().catch(() => null);
                   const msg = errorJson?.error?.message ?? `Erro ao exportar (HTTP ${response.status}).`;
                   alert(msg);
