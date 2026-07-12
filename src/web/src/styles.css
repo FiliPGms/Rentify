@@ -216,9 +216,22 @@ h2 {
   flex-basis: 100%;
 }
 
-.inline-form select,
-.inline-form input {
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  margin-bottom: 0;
+}
+
+.inline-form .form-group {
   flex: 1 1 170px;
+}
+
+.inline-form button {
+  align-self: flex-end;
 }
 
 .filters {

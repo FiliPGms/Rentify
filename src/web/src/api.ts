@@ -82,9 +82,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   }
 
-  const json = (await response.json()) as ApiResponse<T>;
-  if (!response.ok || !json.success) {
-    throw new Error(json.error?.message ?? 'Erro inesperado.');
+  // Parse JSON safely to handle proxy errors or empty responses
+  let json: ApiResponse<T> | null = null;
+  const text = await response.text();
+  if (text) {
+    try {
+      json = JSON.parse(text) as ApiResponse<T>;
+    } catch {
+      // response is not valid JSON
+    }
+  }
+
+  if (!response.ok || !json || !json.success) {
+    throw new Error(json?.error?.message ?? `Erro de conexão com o servidor (HTTP ${response.status}).`);
   }
 
   return json.data;

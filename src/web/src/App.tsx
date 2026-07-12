@@ -296,7 +296,10 @@ function ContratoForm({
         ))}
       </select>
       <input name="nomeInquilino" placeholder="Nome do inquilino" required />
-      <input name="dataVencimentoPadrao" type="date" required />
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="dataVencimentoPadrao">Vencimento Padrão (Primeira Parcela)</label>
+        <input id="dataVencimentoPadrao" name="dataVencimentoPadrao" type="date" required />
+      </div>
       <button type="submit">Cadastrar contrato</button>
     </form>
   );
@@ -306,9 +309,12 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const mesRaw = String(form.get('mesReferencia')); // YYYY-MM
+    const mesReferencia = mesRaw ? `${mesRaw}-01` : '';
+
     await api.createConta({
       contratoId: String(form.get('contratoId')),
-      mesReferencia: String(form.get('mesReferencia')),
+      mesReferencia,
       dataVencimento: String(form.get('dataVencimento')),
       valor: Number(form.get('valor'))
     });
@@ -319,17 +325,29 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
   return (
     <form className="panel inline-form" onSubmit={submit}>
       <h2>Nova conta</h2>
-      <select name="contratoId" required>
-        <option value="">Contrato</option>
-        {contratos.map((contrato) => (
-          <option key={contrato.id} value={contrato.id}>
-            {contrato.nomeInquilino} - {contrato.empreendimento.nome}
-          </option>
-        ))}
-      </select>
-      <input name="mesReferencia" type="date" required />
-      <input name="dataVencimento" type="date" required />
-      <input name="valor" type="number" min="0" step="0.01" placeholder="Valor" required />
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="contratoId">Contrato</label>
+        <select id="contratoId" name="contratoId" required>
+          <option value="">Selecione o contrato</option>
+          {contratos.map((contrato) => (
+            <option key={contrato.id} value={contrato.id}>
+              {contrato.nomeInquilino} - {contrato.empreendimento.nome}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="mesReferencia">Mês de Referência</label>
+        <input id="mesReferencia" name="mesReferencia" type="month" required />
+      </div>
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="dataVencimento">Data de Vencimento</label>
+        <input id="dataVencimento" name="dataVencimento" type="date" required />
+      </div>
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="valor">Valor</label>
+        <input id="valor" name="valor" type="number" min="0" step="0.01" placeholder="Valor (R$)" required />
+      </div>
       <button type="submit">Criar conta</button>
     </form>
   );
@@ -355,8 +373,8 @@ function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise
             <tr key={conta.id}>
               <td>{conta.contrato.empreendimento.nome}</td>
               <td>{conta.contrato.nomeInquilino}</td>
-              <td>{new Date(conta.mesReferencia).toLocaleDateString('pt-BR')}</td>
-              <td>{new Date(conta.dataVencimento).toLocaleDateString('pt-BR')}</td>
+              <td>{new Date(conta.mesReferencia).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: '2-digit', year: 'numeric' })}</td>
+              <td>{new Date(conta.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
               <td>{money.format(Number(conta.valor))}</td>
               <td>
                 <span className={`badge ${conta.status.toLowerCase()}`}>{conta.status}</span>
