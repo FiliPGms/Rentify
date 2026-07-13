@@ -145,10 +145,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
-  pagarConta: (id: string) =>
+  pagarConta: (id: string, dataPagamento?: string) =>
     request<Conta>(`/contas/${id}/pagamento`, {
       method: 'PATCH',
-      body: JSON.stringify({})
+      body: JSON.stringify(dataPagamento ? { dataPagamento } : {})
     }),
   exportContasUrl: (filters: { status?: string; empreendimentoId?: string }) => {
     const params = new URLSearchParams();
