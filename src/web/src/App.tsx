@@ -57,31 +57,38 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => void }) {
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <p className="eyebrow">Rentify</p>
-        <h1>Controle suas parcelas de aluguel sem planilhas paralelas.</h1>
-        <p className="muted">
-          Cadastre seus empreendimentos, acompanhe vencimentos e gere recorrência mensal ao marcar
-          contas pagas.
-        </p>
-      </section>
-      <form className="panel auth-form" onSubmit={submit}>
-        <h2>{mode === 'login' ? 'Entrar' : 'Criar conta'}</h2>
-        {mode === 'register' && <input name="nome" placeholder="Nome" required />}
-        <input name="email" type="email" placeholder="Email" required />
-        <input name="senha" type="password" placeholder="Senha" minLength={8} required />
-        {error && <p className="error">{error}</p>}
-        <button type="submit">{mode === 'login' ? 'Acessar painel' : 'Cadastrar'}</button>
+    <div className="auth-wrapper">
+      <header className="auth-header">
+        <div className="auth-logo">Rentify</div>
         <button
-          className="ghost"
+          className="ghost compact"
           type="button"
           onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
         >
-          {mode === 'login' ? 'Criar novo usuario' : 'Ja tenho acesso'}
+          {mode === 'login' ? 'Criar conta' : 'Entrar'}
         </button>
-      </form>
-    </main>
+      </header>
+      <main className="auth-page">
+        <section className="auth-hero">
+          <p className="eyebrow">Cockpit de recebíveis</p>
+          <h1>Controle suas parcelas de aluguel sem planilhas paralelas.</h1>
+          <p className="muted">
+            Cadastre seus empreendimentos, acompanhe vencimentos e gere recorrência mensal ao marcar
+            contas pagas.
+          </p>
+        </section>
+        <section className="auth-form-container">
+          <form className="panel auth-form" onSubmit={submit}>
+            <h2>{mode === 'login' ? 'Entrar' : 'Criar conta'}</h2>
+            {mode === 'register' && <input name="nome" placeholder="Nome" required />}
+            <input name="email" type="email" placeholder="Email" required />
+            <input name="senha" type="password" placeholder="Senha" minLength={8} required />
+            {error && <p className="error">{error}</p>}
+            <button type="submit">{mode === 'login' ? 'Acessar painel' : 'Cadastrar'}</button>
+          </form>
+        </section>
+      </main>
+    </div>
   );
 }
 
