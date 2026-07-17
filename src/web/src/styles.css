@@ -18,6 +18,23 @@
   --radius-sm: 8px;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  --paper: #09090b;
+  --panel: #18181b;
+  --line: #27272a;
+  --brand: #00e676; /* brighter vibrant green for dark mode */
+  --brand-hover: #00c853;
+  --brand-light: rgba(0, 230, 118, 0.08);
+  --danger: #f87171;
+  --danger-light: rgba(248, 113, 113, 0.08);
+  --warning: #fbbf24;
+  --warning-light: rgba(251, 191, 36, 0.08);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -69,7 +86,7 @@ button.ghost {
 }
 
 button.ghost:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(120, 120, 120, 0.08);
 }
 
 button.compact {
@@ -85,7 +102,7 @@ select {
   border-radius: var(--radius-sm);
   padding: 0.75rem 0.95rem;
   color: var(--ink);
-  background: #ffffff;
+  background: var(--panel);
   outline: none;
   font-size: 0.95rem;
   transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -129,7 +146,7 @@ h2 {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: var(--paper);
 }
 
 .auth-header {
@@ -302,7 +319,7 @@ h2 {
   overflow: hidden;
   height: 8px;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--line);
 }
 
 .bar-fill {
@@ -358,7 +375,7 @@ h2 {
 .filters {
   justify-content: flex-start;
   margin-bottom: 1.25rem;
-  background: #ffffff;
+  background: var(--panel);
   padding: 0.75rem 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -404,12 +421,12 @@ th {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  background: #fafafa;
+  background: var(--paper);
   border-top: 1px solid var(--line);
 }
 
 tr:hover td {
-  background: #fbfbfc;
+  background: rgba(120, 120, 120, 0.05);
 }
 
 /* Badges */
@@ -482,3 +499,19 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+}
+
+.theme-toggle svg {
+  display: block;
+}
+
