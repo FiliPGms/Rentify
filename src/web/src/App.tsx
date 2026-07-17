@@ -35,6 +35,7 @@ const MoonIcon = () => (
 
 export function App() {
   const [authenticated, setAuthenticated] = useState(hasToken());
+  const [view, setView] = useState<'landing' | 'auth'>('landing');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
   });
@@ -42,6 +43,7 @@ export function App() {
   useEffect(() => {
     onUnauthorized(() => {
       setAuthenticated(false);
+      setView('auth');
     });
   }, []);
 
@@ -53,11 +55,21 @@ export function App() {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   if (!authenticated) {
+    if (view === 'landing') {
+      return (
+        <LandingPage
+          onGetStarted={() => setView('auth')}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      );
+    }
     return (
       <AuthScreen
         onAuthenticated={() => setAuthenticated(true)}
         theme={theme}
         onToggleTheme={toggleTheme}
+        onBackToLanding={() => setView('landing')}
       />
     );
   }
@@ -74,11 +86,13 @@ export function App() {
 function AuthScreen({
   onAuthenticated,
   theme,
-  onToggleTheme
+  onToggleTheme,
+  onBackToLanding
 }: {
   onAuthenticated: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  onBackToLanding: () => void;
 }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [error, setError] = useState('');
@@ -109,7 +123,7 @@ function AuthScreen({
   return (
     <div className="auth-wrapper">
       <header className="auth-header">
-        <div className="auth-logo">Rentify</div>
+        <div className="auth-logo" style={{ cursor: 'pointer' }} onClick={onBackToLanding}>Rentify</div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <button
             className="ghost theme-toggle"
@@ -503,3 +517,154 @@ function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise
     </div>
   );
 }
+
+function LandingPage({
+  onGetStarted,
+  theme,
+  onToggleTheme
+}: {
+  onGetStarted: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+}) {
+  return (
+    <div className="landing-wrapper">
+      <header className="landing-header">
+        <div className="landing-logo">Rentify</div>
+        <nav className="landing-nav">
+          <a href="#features">Funcionalidades</a>
+          <a href="#pricing">Planos</a>
+        </nav>
+        <div className="landing-actions">
+          <button
+            className="ghost theme-toggle"
+            type="button"
+            onClick={onToggleTheme}
+            title={theme === 'light' ? 'Modo Escuro' : 'Modo Claro'}
+            aria-label="Alternar tema"
+          >
+            {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+          </button>
+          <button className="ghost compact" onClick={onGetStarted}>Entrar</button>
+          <button className="compact" onClick={onGetStarted}>Acessar Painel</button>
+        </div>
+      </header>
+
+      <main className="landing-main">
+        {/* Hero Section */}
+        <section className="landing-hero">
+          <div className="landing-hero-content">
+            <span className="landing-badge">⚡ NOVO: GESTÃO INTELIGENTE DE RECEBÍVEIS</span>
+            <h1>Planilhas de aluguel no passado. Controle no presente.</h1>
+            <p className="muted">
+              Esquecer controles paralelos é libertador. Cadastre seus imóveis, acompanhe vencimentos e gere a recorrência mensal de recebíveis automaticamente de forma limpa e rápida.
+            </p>
+            <div className="landing-hero-ctas">
+              <button onClick={onGetStarted}>Começar Gratuitamente</button>
+              <a href="#features" className="button ghost">Ver Funcionalidades</a>
+            </div>
+          </div>
+
+          <div className="landing-hero-preview">
+            <div className="mock-window">
+              <div className="mock-header">
+                <span className="dot dot-red"></span>
+                <span className="dot dot-yellow"></span>
+                <span className="dot dot-green"></span>
+                <span className="mock-title">Rentify Cockpit</span>
+              </div>
+              <div className="mock-body">
+                <div className="mock-metrics">
+                  <div className="mock-metric success">
+                    <span>Recebido</span>
+                    <strong>R$ 18.500,00</strong>
+                  </div>
+                  <div className="mock-metric danger">
+                    <span>Atrasado</span>
+                    <strong>R$ 0,00</strong>
+                  </div>
+                </div>
+                <div className="mock-table-wrap">
+                  <table className="mock-table">
+                    <thead>
+                      <tr>
+                        <th>Empreendimento</th>
+                        <th>Inquilino</th>
+                        <th>Vencimento</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Condomínio Villagio</td>
+                        <td>Tayana Silveira</td>
+                        <td>05/07/2026</td>
+                        <td><span className="badge pago">PAGO</span></td>
+                      </tr>
+                      <tr>
+                        <td>Residencial Sol</td>
+                        <td>Joao Silva</td>
+                        <td>10/08/2026</td>
+                        <td><span className="badge pendente">PENDENTE</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="landing-features">
+          <p className="eyebrow">Funcionalidades</p>
+          <h2>Projetado para administradores eficientes</h2>
+          <div className="landing-features-grid">
+            <div className="feature-card">
+              <div className="feature-icon">🔄</div>
+              <h3>Geração Automática</h3>
+              <p>Ao marcar um recebível como pago, a parcela do mês seguinte é gerada de forma atômica.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">📅</div>
+              <h3>Rotina Diária de Atrasos</h3>
+              <p>O robô diário atualiza automaticamente o status de contas pendentes vencidas para atrasadas.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">📊</div>
+              <h3>Exportação Rápida</h3>
+              <p>Baixe relatórios completos em formato Excel (.xlsx) com um clique e com todos os filtros aplicados.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="landing-pricing">
+          <p className="eyebrow">Preço</p>
+          <h2>Plano transparente, sem surpresas</h2>
+          <div className="pricing-card">
+            <span className="pricing-badge">START</span>
+            <h3>Tudo que você precisa</h3>
+            <div className="price">
+              <strong>R$ 49</strong>
+              <span>/mês</span>
+            </div>
+            <ul className="pricing-features">
+              <li>✓ Imóveis e Empreendimentos ilimitados</li>
+              <li>✓ Contratos e Inquilinos ilimitados</li>
+              <li>✓ Exportações em Excel ilimitadas</li>
+              <li>✓ Automações e Cron diários ativos</li>
+              <li>✓ Suporte humanizado</li>
+            </ul>
+            <button className="pricing-button" onClick={onGetStarted}>Assinar e Começar Agora</button>
+          </div>
+        </section>
+      </main>
+
+      <footer className="landing-footer">
+        <p>Rentify © 2026. A maneira mais limpa de gerenciar seus aluguéis.</p>
+      </footer>
+    </div>
+  );
+}
+
