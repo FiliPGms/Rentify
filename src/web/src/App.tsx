@@ -13,8 +13,31 @@ import {
 
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"></circle>
+    <line x1="12" y1="1" x2="12" y2="3"></line>
+    <line x1="12" y1="21" x2="12" y2="23"></line>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+    <line x1="1" y1="12" x2="3" y2="12"></line>
+    <line x1="21" y1="12" x2="23" y2="12"></line>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+  </svg>
+);
+
 export function App() {
   const [authenticated, setAuthenticated] = useState(hasToken());
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+  });
 
   useEffect(() => {
     onUnauthorized(() => {
@@ -22,14 +45,41 @@ export function App() {
     });
   }, []);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
   if (!authenticated) {
-    return <AuthScreen onAuthenticated={() => setAuthenticated(true)} />;
+    return (
+      <AuthScreen
+        onAuthenticated={() => setAuthenticated(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
   }
 
-  return <Shell onLogout={() => setAuthenticated(false)} />;
+  return (
+    <Shell
+      onLogout={() => setAuthenticated(false)}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+    />
+  );
 }
 
-function AuthScreen({ onAuthenticated }: { onAuthenticated: () => void }) {
+function AuthScreen({
+  onAuthenticated,
+  theme,
+  onToggleTheme
+}: {
+  onAuthenticated: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+}) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [error, setError] = useState('');
 
@@ -60,13 +110,24 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => void }) {
     <div className="auth-wrapper">
       <header className="auth-header">
         <div className="auth-logo">Rentify</div>
-        <button
-          className="ghost compact"
-          type="button"
-          onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-        >
-          {mode === 'login' ? 'Criar conta' : 'Entrar'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button
+            className="ghost theme-toggle"
+            type="button"
+            onClick={onToggleTheme}
+            title={theme === 'light' ? 'Modo Escuro' : 'Modo Claro'}
+            aria-label="Alternar tema"
+          >
+            {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+          </button>
+          <button
+            className="ghost compact"
+            type="button"
+            onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+          >
+            {mode === 'login' ? 'Criar conta' : 'Entrar'}
+          </button>
+        </div>
       </header>
       <main className="auth-page">
         <section className="auth-hero">
@@ -92,7 +153,15 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => void }) {
   );
 }
 
-function Shell({ onLogout }: { onLogout: () => void }) {
+function Shell({
+  onLogout,
+  theme,
+  onToggleTheme
+}: {
+  onLogout: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+}) {
   const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]);
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [contas, setContas] = useState<Conta[]>([]);
@@ -135,9 +204,20 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <p className="eyebrow">Rentify</p>
           <h1>Painel de recebíveis</h1>
         </div>
-        <button className="ghost" onClick={logout}>
-          Sair
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button
+            className="ghost theme-toggle"
+            type="button"
+            onClick={onToggleTheme}
+            title={theme === 'light' ? 'Modo Escuro' : 'Modo Claro'}
+            aria-label="Alternar tema"
+          >
+            {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+          </button>
+          <button className="ghost" onClick={logout}>
+            Sair
+          </button>
+        </div>
       </header>
 
       {error && <p className="error">{error}</p>}
