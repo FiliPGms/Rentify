@@ -533,7 +533,9 @@ function LandingPage({
         <div className="landing-logo">Rentify</div>
         <nav className="landing-nav">
           <a href="#features">Funcionalidades</a>
+          <a href="#steps">Como Funciona</a>
           <a href="#pricing">Planos</a>
+          <a href="#faq">Dúvidas</a>
         </nav>
         <div className="landing-actions">
           <button
@@ -555,7 +557,7 @@ function LandingPage({
         <section className="landing-hero">
           <div className="landing-hero-content">
             <span className="landing-badge">⚡ NOVO: GESTÃO INTELIGENTE DE RECEBÍVEIS</span>
-            <h1>Planilhas de aluguel no passado. Controle no presente.</h1>
+            <h1>Planilhas de aluguel no passado, controle no presente.</h1>
             <p className="muted">
               Esquecer controles paralelos é libertador. Cadastre seus imóveis, acompanhe vencimentos e gere a recorrência mensal de recebíveis automaticamente de forma limpa e rápida.
             </p>
@@ -596,8 +598,8 @@ function LandingPage({
                     </thead>
                     <tbody>
                       <tr>
-                        <td>Condomínio Villagio</td>
-                        <td>Tayana Silveira</td>
+                        <td>Ed. Comercial</td>
+                        <td>Tay Carla</td>
                         <td>05/07/2026</td>
                         <td><span className="badge pago">PAGO</span></td>
                       </tr>
@@ -618,12 +620,12 @@ function LandingPage({
         {/* Features Section */}
         <section id="features" className="landing-features">
           <p className="eyebrow">Funcionalidades</p>
-          <h2>Projetado para administradores eficientes</h2>
+          <h2>Foco na gestão de aluguéis</h2>
           <div className="landing-features-grid">
             <div className="feature-card">
               <div className="feature-icon">🔄</div>
               <h3>Geração Automática</h3>
-              <p>Ao marcar um recebível como pago, a parcela do mês seguinte é gerada de forma atômica.</p>
+              <p>Ao marcar um recebível como pago, a parcela do mês seguinte é gerada de forma automática.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">📅</div>
@@ -634,6 +636,29 @@ function LandingPage({
               <div className="feature-icon">📊</div>
               <h3>Exportação Rápida</h3>
               <p>Baixe relatórios completos em formato Excel (.xlsx) com um clique e com todos os filtros aplicados.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Steps Section */}
+        <section id="steps" className="landing-steps">
+          <p className="eyebrow">Fluxo de Trabalho</p>
+          <h2>Gestão de ponta a ponta em 3 passos simples</h2>
+          <div className="landing-steps-container">
+            <div className="step-item">
+              <span className="step-number">01</span>
+              <h4>Cadastre o Imóvel & Contrato</h4>
+              <p>Defina o valor base e a data padrão de vencimento das parcelas em segundos.</p>
+            </div>
+            <div className="step-item">
+              <span className="step-number">02</span>
+              <h4>Dê Baixa com 1 Clique</h4>
+              <p>Marque o aluguel do mês atual como pago informando a data real do recebimento.</p>
+            </div>
+            <div className="step-item">
+              <span className="step-number">03</span>
+              <h4>Automação faz o resto</h4>
+              <p>O sistema cria automaticamente a parcela do mês seguinte e atualiza atrasos todo dia.</p>
             </div>
           </div>
         </section>
@@ -657,6 +682,30 @@ function LandingPage({
               <li>✓ Suporte humanizado</li>
             </ul>
             <button className="pricing-button" onClick={onGetStarted}>Assinar e Começar Agora</button>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="landing-faq">
+          <p className="eyebrow">Dúvidas frequentes</p>
+          <h2>Tudo o que você precisa saber</h2>
+          <div className="faq-grid">
+            <details className="faq-item">
+              <summary>Como funciona a recorrência automatizada?</summary>
+              <p>Assim que você marca uma conta do mês como PAGA, o Rentify verifica se o contrato associado ainda está ATIVO e, em caso positivo, cria de forma atômica a parcela do próximo mês (com o mesmo valor e o dia correspondente ajustado para o mês seguinte).</p>
+            </details>
+            <details className="faq-item">
+              <summary>Preciso cadastrar cartão de crédito para testar?</summary>
+              <p>Não! Você pode criar sua conta e experimentar a plataforma gratuitamente para gerenciar seus empreendimentos sem barreiras.</p>
+            </details>
+            <details className="faq-item">
+              <summary>O sistema avisa se um aluguel estiver atrasado?</summary>
+              <p>Sim. Uma rotina inteligente roda diariamente no servidor, verificando as contas vencidas e pendentes, alterando o status delas automaticamente para EM ATRASO para facilitar sua cobrança.</p>
+            </details>
+            <details className="faq-item">
+              <summary>Consigo exportar meus relatórios?</summary>
+              <p>Com certeza. A ferramenta de exportação gera planilhas profissionais Excel (.xlsx) respeitando os mesmos filtros de status e empreendimento ativos no seu grid de gerenciamento.</p>
+            </details>
           </div>
         </section>
       </main>
