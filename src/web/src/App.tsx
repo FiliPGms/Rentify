@@ -531,7 +531,30 @@ function LandingPage({
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const targetPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const startPosition = window.pageYOffset;
+      const distance = targetPosition - startPosition;
+      const duration = 800; // ms for a premium feel
+      let start: number | null = null;
+
+      const step = (timestamp: number) => {
+        if (!start) start = timestamp;
+        const progress = timestamp - start;
+        const progressPercentage = Math.min(progress / duration, 1);
+        
+        // Easing function (easeInOutCubic)
+        const ease = progressPercentage < 0.5
+          ? 4 * progressPercentage * progressPercentage * progressPercentage
+          : 1 - Math.pow(-2 * progressPercentage + 2, 3) / 2;
+
+        window.scrollTo(0, startPosition + distance * ease);
+
+        if (progress < duration) {
+          window.requestAnimationFrame(step);
+        }
+      };
+
+      window.requestAnimationFrame(step);
     }
   };
 
