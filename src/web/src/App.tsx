@@ -702,7 +702,7 @@ function LandingPage({
             <span className="pricing-badge">START</span>
             <h3>Tudo que você precisa</h3>
             <div className="price">
-              <strong>R$ 49</strong>
+              <strong>R$ 20,90</strong>
               <span>/mês</span>
             </div>
             <ul className="pricing-features">
