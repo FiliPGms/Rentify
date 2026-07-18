@@ -527,15 +527,23 @@ function LandingPage({
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }) {
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="landing-wrapper">
       <header className="landing-header">
         <div className="landing-logo">Rentify</div>
         <nav className="landing-nav">
-          <a href="#features">Funcionalidades</a>
-          <a href="#steps">Como Funciona</a>
-          <a href="#pricing">Planos</a>
-          <a href="#faq">Dúvidas</a>
+          <a href="#features" onClick={(e) => handleScroll(e, 'features')}>Funcionalidades</a>
+          <a href="#steps" onClick={(e) => handleScroll(e, 'steps')}>Como Funciona</a>
+          <a href="#pricing" onClick={(e) => handleScroll(e, 'pricing')}>Planos</a>
+          <a href="#faq" onClick={(e) => handleScroll(e, 'faq')}>Dúvidas</a>
         </nav>
         <div className="landing-actions">
           <button
@@ -563,7 +571,7 @@ function LandingPage({
             </p>
             <div className="landing-hero-ctas">
               <button onClick={onGetStarted}>Começar Gratuitamente</button>
-              <a href="#features" className="button ghost">Ver Funcionalidades</a>
+              <a href="#features" className="button ghost" onClick={(e) => handleScroll(e, 'features')}>Ver Funcionalidades</a>
             </div>
           </div>
 
@@ -692,7 +700,7 @@ function LandingPage({
           <div className="faq-grid">
             <details className="faq-item">
               <summary>Como funciona a recorrência automatizada?</summary>
-              <p>Assim que você marca uma conta do mês como PAGA, o Rentify verifica se o contrato associado ainda está ATIVO e, em caso positivo, cria de forma atômica a parcela do próximo mês (com o mesmo valor e o dia correspondente ajustado para o mês seguinte).</p>
+              <p>Assim que você marca uma conta do mês como PAGA, o Rentify verifica se o contrato associado ainda está ATIVO e, em caso positivo, cria de forma automática a parcela do próximo mês (com o mesmo valor e o dia correspondente ajustado para o mês seguinte).</p>
             </details>
             <details className="faq-item">
               <summary>Preciso cadastrar cartão de crédito para testar?</summary>
