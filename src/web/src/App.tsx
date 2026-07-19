@@ -182,6 +182,7 @@ function Shell({
   const [dashboard, setDashboard] = useState<DashboardResumo | null>(null);
   const [status, setStatus] = useState('');
   const [empreendimentoId, setEmpreendimentoId] = useState('');
+  const [tipo, setTipo] = useState('');
   const [error, setError] = useState('');
 
   async function load() {
@@ -190,7 +191,7 @@ function Shell({
       const [nextEmpreendimentos, nextContratos, nextContas, nextDashboard] = await Promise.all([
         api.empreendimentos(),
         api.contratos(),
-        api.contas({ status, empreendimentoId }),
+        api.contas({ status, empreendimentoId, tipo }),
         api.dashboard()
       ]);
       setEmpreendimentos(nextEmpreendimentos);
@@ -204,7 +205,7 @@ function Shell({
 
   useEffect(() => {
     void load();
-  }, [status, empreendimentoId]);
+  }, [status, empreendimentoId, tipo]);
 
   function logout() {
     clearToken();
@@ -254,7 +255,7 @@ function Shell({
           <button
             onClick={async () => {
               try {
-                const response = await fetch(api.exportContasUrl({ status, empreendimentoId }), {
+                const response = await fetch(api.exportContasUrl({ status, empreendimentoId, tipo }), {
                   headers: api.authHeader()
                 });
                 if (!response.ok) {
@@ -300,6 +301,11 @@ function Shell({
                 {empreendimento.nome}
               </option>
             ))}
+          </select>
+          <select value={tipo} onChange={(event) => setTipo(event.target.value)}>
+            <option value="">Todos os tipos</option>
+            <option value="ALUGUEL">Aluguel</option>
+            <option value="CAUCAO">Caução</option>
           </select>
         </div>
         <ContaTable contas={contas} onPaid={load} />
@@ -417,7 +423,8 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
       contratoId: String(form.get('contratoId')),
       mesReferencia,
       dataVencimento: String(form.get('dataVencimento')),
-      valor: Number(form.get('valor'))
+      valor: Number(form.get('valor')),
+      tipo: String(form.get('tipo')) as 'ALUGUEL' | 'CAUCAO'
     });
     event.currentTarget.reset();
     await onCreated();
@@ -449,6 +456,13 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
         <label className="eyebrow" htmlFor="valor">Valor</label>
         <input id="valor" name="valor" type="number" min="0" step="0.01" placeholder="Valor (R$)" required />
       </div>
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="tipo">Tipo</label>
+        <select id="tipo" name="tipo" required>
+          <option value="ALUGUEL">Aluguel</option>
+          <option value="CAUCAO">Caução</option>
+        </select>
+      </div>
       <button type="submit">Criar conta</button>
     </form>
   );
@@ -462,6 +476,7 @@ function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise
           <tr>
             <th>Empreendimento</th>
             <th>Inquilino</th>
+            <th>Tipo</th>
             <th>Mes</th>
             <th>Vencimento</th>
             <th>Valor</th>
@@ -474,6 +489,11 @@ function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise
             <tr key={conta.id}>
               <td>{conta.contrato.empreendimento.nome}</td>
               <td>{conta.contrato.nomeInquilino}</td>
+              <td>
+                <span className={`badge ${conta.tipo.toLowerCase()}`}>
+                  {conta.tipo === 'CAUCAO' ? 'CAUÇÃO' : conta.tipo}
+                </span>
+              </td>
               <td>{new Date(conta.mesReferencia).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: '2-digit', year: 'numeric' })}</td>
               <td>{new Date(conta.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
               <td>{money.format(Number(conta.valor))}</td>

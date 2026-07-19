@@ -29,6 +29,7 @@ export type Conta = {
   dataPagamento: string | null;
   valor: string;
   status: 'PENDENTE' | 'PAGO' | 'EM_ATRASO';
+  tipo: 'ALUGUEL' | 'CAUCAO';
   contrato: {
     id: string;
     nomeInquilino: string;
@@ -129,10 +130,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
-  contas: (filters: { status?: string; empreendimentoId?: string }) => {
+  contas: (filters: { status?: string; empreendimentoId?: string; tipo?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
     if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
+    if (filters.tipo) params.set('tipo', filters.tipo);
     return request<Conta[]>(`/contas?${params.toString()}`);
   },
   createConta: (payload: {
@@ -140,6 +142,7 @@ export const api = {
     mesReferencia: string;
     dataVencimento: string;
     valor: number;
+    tipo: 'ALUGUEL' | 'CAUCAO';
   }) =>
     request<Conta>('/contas', {
       method: 'POST',
@@ -150,10 +153,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(dataPagamento ? { dataPagamento } : {})
     }),
-  exportContasUrl: (filters: { status?: string; empreendimentoId?: string }) => {
+  exportContasUrl: (filters: { status?: string; empreendimentoId?: string; tipo?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
     if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
+    if (filters.tipo) params.set('tipo', filters.tipo);
     return `${API_BASE}/contas/export?${params.toString()}`;
   },
   authHeader: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {})
