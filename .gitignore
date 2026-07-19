@@ -40,5 +40,6 @@ docs
 context.md
 package-lock.json
 
+prisma/migrations
 
 src/web/vite.config.mjs.timestamp-1783803565222-dfc1533e60f59.mjs

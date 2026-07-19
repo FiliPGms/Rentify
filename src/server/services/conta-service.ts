@@ -1,4 +1,4 @@
-import { Prisma, type ContaStatus } from '@prisma/client';
+import { Prisma, type ContaStatus, type ContaTipo } from '@prisma/client';
 import ExcelJS from 'exceljs';
 import { addMonths, monthStart, parseDateOnly } from '../lib/dates.js';
 import { HttpError } from '../lib/http-error.js';
@@ -8,6 +8,7 @@ import { assertOwnsContrato } from './contrato-service.js';
 type ContaFilters = {
   status?: ContaStatus;
   empreendimentoId?: string;
+  tipo?: ContaTipo;
 };
 
 const includeConta = {
@@ -23,6 +24,7 @@ const includeConta = {
 function whereContas(usuarioId: string, filters: ContaFilters): Prisma.ContaWhereInput {
   return {
     ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.tipo ? { tipo: filters.tipo } : {}),
     contrato: {
       empreendimento: {
         usuarioId,
@@ -61,7 +63,7 @@ export async function listContas(
 
 export async function createConta(
   usuarioId: string,
-  input: { contratoId: string; mesReferencia: string; dataVencimento: string; valor: number }
+  input: { contratoId: string; mesReferencia: string; dataVencimento: string; valor: number; tipo?: 'ALUGUEL' | 'CAUCAO' }
 ) {
   await assertOwnsContrato(usuarioId, input.contratoId);
   return prisma.conta.create({
@@ -70,7 +72,8 @@ export async function createConta(
       mesReferencia: monthStart(parseDateOnly(input.mesReferencia)),
       dataVencimento: parseDateOnly(input.dataVencimento),
       valor: new Prisma.Decimal(input.valor),
-      status: 'PENDENTE'
+      status: 'PENDENTE',
+      tipo: input.tipo ?? 'ALUGUEL'
     },
     include: includeConta
   });
@@ -109,12 +112,14 @@ export async function marcarContaPaga(
       include: includeConta
     });
 
-    if (conta.contrato.status === 'ATIVO') {
+    // Apenas contas de ALUGUEL geram recorrência automática
+    if (conta.tipo === 'ALUGUEL' && conta.contrato.status === 'ATIVO') {
       await tx.conta.upsert({
         where: {
-          contratoId_mesReferencia: {
+          contratoId_mesReferencia_tipo: {
             contratoId: conta.contratoId,
-            mesReferencia: nextMonth
+            mesReferencia: nextMonth,
+            tipo: 'ALUGUEL'
           }
         },
         update: {},
@@ -123,7 +128,8 @@ export async function marcarContaPaga(
           mesReferencia: nextMonth,
           dataVencimento: nextDue,
           valor: conta.valor,
-          status: 'PENDENTE'
+          status: 'PENDENTE',
+          tipo: 'ALUGUEL'
         }
       });
     }
@@ -158,6 +164,7 @@ export async function buildContasWorkbook(usuarioId: string, filters: ContaFilte
   sheet.columns = [
     { header: 'Empreendimento', key: 'empreendimento', width: 28 },
     { header: 'Inquilino', key: 'inquilino', width: 28 },
+    { header: 'Tipo', key: 'tipo', width: 14 },
     { header: 'Mes referencia', key: 'mesReferencia', width: 18 },
     { header: 'Vencimento', key: 'dataVencimento', width: 16 },
     { header: 'Pagamento', key: 'dataPagamento', width: 16 },
@@ -169,6 +176,7 @@ export async function buildContasWorkbook(usuarioId: string, filters: ContaFilte
     sheet.addRow({
       empreendimento: conta.contrato.empreendimento.nome,
       inquilino: conta.contrato.nomeInquilino,
+      tipo: conta.tipo,
       mesReferencia: conta.mesReferencia,
       dataVencimento: conta.dataVencimento,
       dataPagamento: conta.dataPagamento,

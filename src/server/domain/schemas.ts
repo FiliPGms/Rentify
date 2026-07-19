@@ -41,12 +41,14 @@ export const contaCreateSchema = z.object({
   contratoId: z.string().uuid(),
   mesReferencia: dateOnly,
   dataVencimento: dateOnly,
-  valor: z.coerce.number().positive()
+  valor: z.coerce.number().positive(),
+  tipo: z.enum(['ALUGUEL', 'CAUCAO']).default('ALUGUEL')
 });
 
 export const contaListSchema = z.object({
   status: z.enum(['PENDENTE', 'PAGO', 'EM_ATRASO']).optional(),
   empreendimentoId: z.string().uuid().optional(),
+  tipo: z.enum(['ALUGUEL', 'CAUCAO']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
