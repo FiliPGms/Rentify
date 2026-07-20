@@ -153,6 +153,10 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(dataPagamento ? { dataPagamento } : {})
     }),
+  despagarConta: (id: string) =>
+    request<Conta>(`/contas/${id}/pagamento`, {
+      method: 'DELETE'
+    }),
   exportContasUrl: (filters: { status?: string; empreendimentoId?: string; tipo?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);

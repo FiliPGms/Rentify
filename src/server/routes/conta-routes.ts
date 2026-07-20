@@ -11,6 +11,7 @@ import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
   buildContasWorkbook,
   createConta,
+  desmarcarContaPaga,
   listContas,
   marcarContaPaga
 } from '../services/conta-service.js';
@@ -65,6 +66,14 @@ contaRoutes.patch(
   validateBody(pagamentoSchema),
   asyncHandler(async (req, res) => {
     const data = await marcarContaPaga((req as AuthenticatedRequest).user.id, req.params.id, req.body);
+    sendOk(res, data);
+  })
+);
+
+contaRoutes.delete(
+  '/:id/pagamento',
+  asyncHandler(async (req, res) => {
+    const data = await desmarcarContaPaga((req as AuthenticatedRequest).user.id, req.params.id);
     sendOk(res, data);
   })
 );

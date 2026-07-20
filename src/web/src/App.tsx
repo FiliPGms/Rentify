@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   api,
   clearToken,
@@ -184,6 +184,14 @@ function Shell({
   const [empreendimentoId, setEmpreendimentoId] = useState('');
   const [tipo, setTipo] = useState('');
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; id: number } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast(message: string, type: 'success' | 'error' = 'success') {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, type, id: Date.now() });
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }
 
   async function load() {
     setError('');
@@ -266,7 +274,7 @@ function Shell({
                   }
                   const errorJson = await response.json().catch(() => null);
                   const msg = errorJson?.error?.message ?? `Erro ao exportar (HTTP ${response.status}).`;
-                  alert(msg);
+                  showToast(msg, "error");
                   return;
                 }
                 const arrayBuffer = await response.arrayBuffer();
@@ -280,7 +288,7 @@ function Shell({
                 link.click();
                 URL.revokeObjectURL(href);
               } catch {
-                alert('Falha ao exportar o arquivo Excel.');
+                showToast('Falha ao exportar o arquivo Excel.', 'error');
               }
             }}
           >
@@ -308,8 +316,17 @@ function Shell({
             <option value="CAUCAO">Caução</option>
           </select>
         </div>
-        <ContaTable contas={contas} onPaid={load} />
+        <ContaTable contas={contas} onPaid={load} showToast={showToast} />
       </section>
+
+      {toast && (
+        <div className="toast-container">
+          <div key={toast.id} className={`toast ${toast.type}`}>
+            <span className="toast-icon">{toast.type === 'success' ? '✓' : '✕'}</span>
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -468,9 +485,83 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
   );
 }
 
-function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise<void> }) {
+function ContaTable({
+  contas,
+  onPaid,
+  showToast
+}: {
+  contas: Conta[];
+  onPaid: () => Promise<void>;
+  showToast: (message: string, type?: 'success' | 'error') => void;
+}) {
+  const [payingContaId, setPayingContaId] = useState<string | null>(null);
+  const [unpayingContaId, setUnpayingContaId] = useState<string | null>(null);
+  const today = new Date();
+  const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [dateValue, setDateValue] = useState(defaultDate);
+  async function confirmPayment() {
+    if (!payingContaId) return;
+    if (!dateValue) {
+      showToast('Informe a data do pagamento.', 'error');
+      return;
+    }
+    try {
+      await api.pagarConta(payingContaId, dateValue);
+      setPayingContaId(null);
+      showToast('Conta marcada como paga com sucesso!', 'success');
+      await onPaid();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao registrar pagamento.', 'error');
+    }
+  }
+
+  async function confirmUnpayment() {
+    if (!unpayingContaId) return;
+    try {
+      await api.despagarConta(unpayingContaId);
+      setUnpayingContaId(null);
+      showToast('Pagamento desmarcado com sucesso.', 'success');
+      await onPaid();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao desmarcar pagamento.', 'error');
+    }
+  }
+
   return (
-    <div className="table-wrap">
+    <>
+      {payingContaId && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPayingContaId(null); }}>
+          <div className="modal-box">
+            <h3>Confirmar Pagamento</h3>
+            <p>Informe a data em que o pagamento foi recebido.</p>
+            <input
+              type="date"
+              value={dateValue}
+              onChange={(e) => setDateValue(e.target.value)}
+              max={defaultDate}
+              autoFocus
+            />
+            <div className="modal-actions">
+              <button className="ghost" type="button" onClick={() => setPayingContaId(null)}>Cancelar</button>
+              <button className="confirm" type="button" onClick={confirmPayment}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {unpayingContaId && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setUnpayingContaId(null); }}>
+          <div className="modal-box">
+            <h3>Desmarcar Pagamento</h3>
+            <p>Você deseja desmarcar essa conta como paga? O status voltará para <strong>Pendente</strong>.</p>
+            <div className="modal-actions">
+              <button className="ghost" type="button" onClick={() => setUnpayingContaId(null)}>Cancelar</button>
+              <button className="confirm" type="button" style={{ background: 'var(--danger)' }} onClick={confirmUnpayment}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="table-wrap">
       <table>
         <thead>
           <tr>
@@ -504,29 +595,21 @@ function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise
                 {conta.status !== 'PAGO' && (
                   <button
                     className="compact"
-                    onClick={async () => {
-                      const today = new Date();
-                      const yyyy = today.getFullYear();
-                      const mm = String(today.getMonth() + 1).padStart(2, '0');
-                      const dd = String(today.getDate()).padStart(2, '0');
-                      const defaultDate = `${yyyy}-${mm}-${dd}`;
-
-                      const inputDate = prompt(
-                        "Informe a data do pagamento (AAAA-MM-DD):",
-                        defaultDate
-                      );
-                      if (inputDate === null) return; // Cancelou
-
-                      if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
-                        alert("Formato inválido. Use o formato AAAA-MM-DD (ex: 2026-07-05).");
-                        return;
-                      }
-
-                      await api.pagarConta(conta.id, inputDate);
-                      await onPaid();
+                    onClick={() => {
+                      setDateValue(defaultDate);
+                      setPayingContaId(conta.id);
                     }}
                   >
                     Marcar paga
+                  </button>
+                )}
+                {conta.status === 'PAGO' && (
+                  <button
+                    className="compact ghost"
+                    style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                    onClick={() => setUnpayingContaId(conta.id)}
+                  >
+                    Desmarcar
                   </button>
                 )}
               </td>
@@ -535,6 +618,7 @@ function ContaTable({ contas, onPaid }: { contas: Conta[]; onPaid: () => Promise
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 

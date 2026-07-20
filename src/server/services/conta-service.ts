@@ -137,6 +137,25 @@ export async function marcarContaPaga(
     return paid;
   });
 }
+export async function desmarcarContaPaga(usuarioId: string, contaId: string) {
+  const conta = await prisma.conta.findFirst({
+    where: { id: contaId, contrato: { empreendimento: { usuarioId } } }
+  });
+
+  if (!conta) {
+    throw new HttpError(404, 'NOT_FOUND', 'Conta nao encontrada.');
+  }
+
+  if (conta.status !== 'PAGO') {
+    throw new HttpError(409, 'NOT_PAID', 'Conta nao esta paga.');
+  }
+
+  return prisma.conta.update({
+    where: { id: conta.id },
+    data: { status: 'PENDENTE', dataPagamento: null },
+    include: includeConta
+  });
+}
 
 export async function atualizarAtrasos() {
   const today = new Date();
