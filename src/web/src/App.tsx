@@ -496,6 +496,7 @@ function ContaTable({
 }) {
   const [payingContaId, setPayingContaId] = useState<string | null>(null);
   const [unpayingContaId, setUnpayingContaId] = useState<string | null>(null);
+  const [deletingContaId, setDeletingContaId] = useState<string | null>(null);
   const today = new Date();
   const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const [dateValue, setDateValue] = useState(defaultDate);
@@ -524,6 +525,18 @@ function ContaTable({
       await onPaid();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Erro ao desmarcar pagamento.', 'error');
+    }
+  }
+
+  async function confirmDeletion() {
+    if (!deletingContaId) return;
+    try {
+      await api.deletarConta(deletingContaId);
+      setDeletingContaId(null);
+      showToast('Conta deletada com sucesso.', 'success');
+      await onPaid();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao deletar conta.', 'error');
     }
   }
 
@@ -556,6 +569,18 @@ function ContaTable({
             <div className="modal-actions">
               <button className="ghost" type="button" onClick={() => setUnpayingContaId(null)}>Cancelar</button>
               <button className="confirm" type="button" style={{ background: 'var(--danger)' }} onClick={confirmUnpayment}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deletingContaId && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDeletingContaId(null); }}>
+          <div className="modal-box">
+            <h3>Deletar Conta</h3>
+            <p>Você deseja deletar essa conta permanentemente? Esta ação não pode ser desfeita.</p>
+            <div className="modal-actions">
+              <button className="ghost" type="button" onClick={() => setDeletingContaId(null)}>Cancelar</button>
+              <button className="confirm" type="button" style={{ background: 'var(--danger)' }} onClick={confirmDeletion}>Deletar</button>
             </div>
           </div>
         </div>
@@ -612,6 +637,17 @@ function ContaTable({
                     Desmarcar
                   </button>
                 )}
+                <button
+                  className="compact ghost"
+                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)', marginLeft: '0.5rem' }}
+                  onClick={() => setDeletingContaId(conta.id)}
+                  title="Deletar conta"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
               </td>
             </tr>
           ))}

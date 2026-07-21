@@ -157,6 +157,20 @@ export async function desmarcarContaPaga(usuarioId: string, contaId: string) {
   });
 }
 
+export async function deletarConta(usuarioId: string, contaId: string) {
+  const conta = await prisma.conta.findFirst({
+    where: { id: contaId, contrato: { empreendimento: { usuarioId } } }
+  });
+
+  if (!conta) {
+    throw new HttpError(404, 'NOT_FOUND', 'Conta nao encontrada.');
+  }
+
+  await prisma.conta.delete({
+    where: { id: contaId }
+  });
+}
+
 export async function atualizarAtrasos() {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);

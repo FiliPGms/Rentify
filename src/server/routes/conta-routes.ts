@@ -11,9 +11,10 @@ import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
   buildContasWorkbook,
   createConta,
-  desmarcarContaPaga,
+  deletarConta,
   listContas,
-  marcarContaPaga
+  marcarContaPaga,
+  desmarcarContaPaga
 } from '../services/conta-service.js';
 import { sendCreated, sendOk } from '../lib/response.js';
 import type { z } from 'zod';
@@ -75,5 +76,13 @@ contaRoutes.delete(
   asyncHandler(async (req, res) => {
     const data = await desmarcarContaPaga((req as AuthenticatedRequest).user.id, req.params.id);
     sendOk(res, data);
+  })
+);
+
+contaRoutes.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    await deletarConta((req as AuthenticatedRequest).user.id, req.params.id);
+    sendOk(res, { success: true });
   })
 );

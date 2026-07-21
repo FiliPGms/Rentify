@@ -157,6 +157,10 @@ export const api = {
     request<Conta>(`/contas/${id}/pagamento`, {
       method: 'DELETE'
     }),
+  deletarConta: (id: string) =>
+    request<{ success: boolean }>(`/contas/${id}`, {
+      method: 'DELETE'
+    }),
   exportContasUrl: (filters: { status?: string; empreendimentoId?: string; tipo?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
