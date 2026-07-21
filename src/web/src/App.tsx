@@ -182,7 +182,7 @@ function Shell({
   const [dashboard, setDashboard] = useState<DashboardResumo | null>(null);
   const [status, setStatus] = useState('');
   const [empreendimentoId, setEmpreendimentoId] = useState('');
-  const [tipo, setTipo] = useState('');
+  const [conta, setConta] = useState('');
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; id: number } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -199,7 +199,7 @@ function Shell({
       const [nextEmpreendimentos, nextContratos, nextContas, nextDashboard] = await Promise.all([
         api.empreendimentos(),
         api.contratos(),
-        api.contas({ status, empreendimentoId, tipo }),
+        api.contas({ status, empreendimentoId, conta }),
         api.dashboard()
       ]);
       setEmpreendimentos(nextEmpreendimentos);
@@ -213,7 +213,7 @@ function Shell({
 
   useEffect(() => {
     void load();
-  }, [status, empreendimentoId, tipo]);
+  }, [status, empreendimentoId, conta]);
 
   function logout() {
     clearToken();
@@ -263,7 +263,7 @@ function Shell({
           <button
             onClick={async () => {
               try {
-                const response = await fetch(api.exportContasUrl({ status, empreendimentoId, tipo }), {
+                const response = await fetch(api.exportContasUrl({ status, empreendimentoId, conta }), {
                   headers: api.authHeader()
                 });
                 if (!response.ok) {
@@ -310,10 +310,10 @@ function Shell({
               </option>
             ))}
           </select>
-          <select value={tipo} onChange={(event) => setTipo(event.target.value)}>
-            <option value="">Todos os tipos</option>
-            <option value="ALUGUEL">Aluguel</option>
-            <option value="CAUCAO">Caução</option>
+          <select value={conta} onChange={(event) => setConta(event.target.value)}>
+            <option value="">Todas as contas</option>
+            <option value="RECEITA">Receita</option>
+            <option value="DESPESA">Despesa</option>
           </select>
         </div>
         <ContaTable contas={contas} onPaid={load} showToast={showToast} />
@@ -336,11 +336,11 @@ function Dashboard({ dashboard }: { dashboard: DashboardResumo | null }) {
 
   return (
     <section className="dashboard">
-      <Metric label="Recebido" value={money.format(dashboard?.faturamentoTotal ?? 0)} />
+      <Metric label="Lucro Líquido" value={money.format(dashboard?.lucroLiquido ?? 0)} />
       <Metric label="Pendente" value={money.format(dashboard?.pendenteTotal ?? 0)} />
       <Metric label="Em atraso" value={money.format(dashboard?.atrasadoTotal ?? 0)} tone="danger" />
       <div className="panel chart">
-        <p className="eyebrow">Rendimento por empreendimento</p>
+        <p className="eyebrow">Lucro líquido por empreendimento</p>
         {(dashboard?.porEmpreendimento ?? []).map((item) => (
           <div className="bar-row" key={item.empreendimentoId}>
             <span>{item.nome}</span>
@@ -435,13 +435,16 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
     const form = new FormData(event.currentTarget);
     const mesRaw = String(form.get('mesReferencia')); // YYYY-MM
     const mesReferencia = mesRaw ? `${mesRaw}-01` : '';
+    const fp = String(form.get('formaPagamento'));
 
     await api.createConta({
       contratoId: String(form.get('contratoId')),
       mesReferencia,
       dataVencimento: String(form.get('dataVencimento')),
       valor: Number(form.get('valor')),
-      tipo: String(form.get('tipo')) as 'ALUGUEL' | 'CAUCAO'
+      conta: String(form.get('conta')) as 'RECEITA' | 'DESPESA',
+      descricao: String(form.get('descricao')),
+      ...(fp ? { formaPagamento: fp as 'PIX' | 'CARTAO_CREDITO' | 'A_VISTA' | 'BOLETO' } : {})
     });
     event.currentTarget.reset();
     await onCreated();
@@ -462,6 +465,17 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
         </select>
       </div>
       <div className="form-group">
+        <label className="eyebrow" htmlFor="conta">Conta</label>
+        <select id="conta" name="conta" required>
+          <option value="RECEITA">Receita</option>
+          <option value="DESPESA">Despesa</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="eyebrow" htmlFor="descricao">Descrição</label>
+        <input id="descricao" name="descricao" placeholder="Ex: Aluguel, Internet, Condomínio" required />
+      </div>
+      <div className="form-group">
         <label className="eyebrow" htmlFor="mesReferencia">Mês de Referência</label>
         <input id="mesReferencia" name="mesReferencia" type="month" required />
       </div>
@@ -474,10 +488,13 @@ function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated:
         <input id="valor" name="valor" type="number" min="0" step="0.01" placeholder="Valor (R$)" required />
       </div>
       <div className="form-group">
-        <label className="eyebrow" htmlFor="tipo">Tipo</label>
-        <select id="tipo" name="tipo" required>
-          <option value="ALUGUEL">Aluguel</option>
-          <option value="CAUCAO">Caução</option>
+        <label className="eyebrow" htmlFor="formaPagamento">Forma de Pagamento</label>
+        <select id="formaPagamento" name="formaPagamento">
+          <option value="">Não informado</option>
+          <option value="PIX">PIX</option>
+          <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+          <option value="A_VISTA">À Vista</option>
+          <option value="BOLETO">Boleto</option>
         </select>
       </div>
       <button type="submit">Criar conta</button>
@@ -497,9 +514,19 @@ function ContaTable({
   const [payingContaId, setPayingContaId] = useState<string | null>(null);
   const [unpayingContaId, setUnpayingContaId] = useState<string | null>(null);
   const [deletingContaId, setDeletingContaId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   const today = new Date();
   const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const [dateValue, setDateValue] = useState(defaultDate);
+
+  const formaPagamentoLabels: Record<string, string> = {
+    PIX: 'PIX',
+    CARTAO_CREDITO: 'Cartão',
+    A_VISTA: 'À Vista',
+    BOLETO: 'Boleto'
+  };
+
   async function confirmPayment() {
     if (!payingContaId) return;
     if (!dateValue) {
@@ -537,6 +564,21 @@ function ContaTable({
       await onPaid();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Erro ao deletar conta.', 'error');
+    }
+  }
+
+  async function saveDescricao(contaId: string) {
+    if (!editValue.trim()) {
+      showToast('Descrição não pode ficar vazia.', 'error');
+      return;
+    }
+    try {
+      await api.atualizarDescricao(contaId, editValue.trim());
+      setEditingId(null);
+      showToast('Descrição atualizada.', 'success');
+      await onPaid();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao atualizar descrição.', 'error');
     }
   }
 
@@ -592,8 +634,10 @@ function ContaTable({
           <tr>
             <th>Empreendimento</th>
             <th>Inquilino</th>
-            <th>Tipo</th>
-            <th>Mes</th>
+            <th>Conta</th>
+            <th>Descrição</th>
+            <th>Forma Pgto</th>
+            <th>Mês</th>
             <th>Vencimento</th>
             <th>Valor</th>
             <th>Status</th>
@@ -601,38 +645,65 @@ function ContaTable({
           </tr>
         </thead>
         <tbody>
-          {contas.map((conta) => (
-            <tr key={conta.id}>
-              <td>{conta.contrato.empreendimento.nome}</td>
-              <td>{conta.contrato.nomeInquilino}</td>
+          {contas.map((c) => (
+            <tr key={c.id}>
+              <td>{c.contrato.empreendimento.nome}</td>
+              <td>{c.contrato.nomeInquilino}</td>
               <td>
-                <span className={`badge ${conta.tipo.toLowerCase()}`}>
-                  {conta.tipo === 'CAUCAO' ? 'CAUÇÃO' : conta.tipo}
+                <span className={`badge ${c.conta.toLowerCase()}`}>
+                  {c.conta}
                 </span>
               </td>
-              <td>{new Date(conta.mesReferencia).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: '2-digit', year: 'numeric' })}</td>
-              <td>{new Date(conta.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-              <td>{money.format(Number(conta.valor))}</td>
               <td>
-                <span className={`badge ${conta.status.toLowerCase()}`}>{conta.status}</span>
+                {editingId === c.id ? (
+                  <input
+                    className="inline-edit"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => saveDescricao(c.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveDescricao(c.id);
+                      if (e.key === 'Escape') setEditingId(null);
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className="editable-cell"
+                    title="Clique para editar"
+                    onClick={() => {
+                      setEditingId(c.id);
+                      setEditValue(c.descricao);
+                    }}
+                  >
+                    {c.descricao}
+                  </span>
+                )}
+              </td>
+              <td>{c.formaPagamento ? formaPagamentoLabels[c.formaPagamento] ?? c.formaPagamento : '—'}</td>
+              <td>{new Date(c.mesReferencia).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: '2-digit', year: 'numeric' })}</td>
+              <td>{new Date(c.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+              <td>{money.format(Number(c.valor))}</td>
+              <td>
+                <span className={`badge ${c.status.toLowerCase()}`}>{c.status}</span>
               </td>
               <td>
-                {conta.status !== 'PAGO' && (
+                {c.status !== 'PAGO' && (
                   <button
                     className="compact"
                     onClick={() => {
                       setDateValue(defaultDate);
-                      setPayingContaId(conta.id);
+                      setPayingContaId(c.id);
                     }}
                   >
                     Marcar paga
                   </button>
                 )}
-                {conta.status === 'PAGO' && (
+                {c.status === 'PAGO' && (
                   <button
                     className="compact ghost"
                     style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                    onClick={() => setUnpayingContaId(conta.id)}
+                    onClick={() => setUnpayingContaId(c.id)}
                   >
                     Desmarcar
                   </button>
@@ -640,7 +711,7 @@ function ContaTable({
                 <button
                   className="compact ghost"
                   style={{ color: 'var(--danger)', borderColor: 'var(--danger)', marginLeft: '0.5rem' }}
-                  onClick={() => setDeletingContaId(conta.id)}
+                  onClick={() => setDeletingContaId(c.id)}
                   title="Deletar conta"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

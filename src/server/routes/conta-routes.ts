@@ -3,12 +3,14 @@ import {
   contaCreateSchema,
   contaExportSchema,
   contaListSchema,
+  contaUpdateDescricaoSchema,
   pagamentoSchema
 } from '../domain/schemas.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
+  atualizarDescricaoConta,
   buildContasWorkbook,
   createConta,
   deletarConta,
@@ -84,5 +86,18 @@ contaRoutes.delete(
   asyncHandler(async (req, res) => {
     await deletarConta((req as AuthenticatedRequest).user.id, req.params.id);
     sendOk(res, { success: true });
+  })
+);
+
+contaRoutes.patch(
+  '/:id/descricao',
+  validateBody(contaUpdateDescricaoSchema),
+  asyncHandler(async (req, res) => {
+    const data = await atualizarDescricaoConta(
+      (req as AuthenticatedRequest).user.id,
+      req.params.id,
+      req.body.descricao
+    );
+    sendOk(res, data);
   })
 );
