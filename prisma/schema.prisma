@@ -18,9 +18,16 @@ enum ContaStatus {
   EM_ATRASO
 }
 
-enum ContaTipo {
-  ALUGUEL
-  CAUCAO
+enum ContaConta {
+  RECEITA
+  DESPESA
+}
+
+enum FormaPagamento {
+  PIX
+  CARTAO_CREDITO
+  A_VISTA
+  BOLETO
 }
 
 model Usuario {
@@ -67,19 +74,20 @@ model Contrato {
 }
 
 model Conta {
-  id             String      @id @default(uuid())
-  contratoId     String      @map("contrato_id")
-  mesReferencia  DateTime    @map("mes_referencia") @db.Date
-  dataVencimento DateTime    @map("data_vencimento") @db.Date
-  dataPagamento  DateTime?   @map("data_pagamento") @db.Date
-  valor          Decimal     @db.Decimal(12, 2)
-  status         ContaStatus @default(PENDENTE)
-  tipo           ContaTipo   @default(ALUGUEL)
-  contrato       Contrato    @relation(fields: [contratoId], references: [id], onDelete: Cascade)
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
+  id              String          @id @default(uuid())
+  contratoId      String          @map("contrato_id")
+  mesReferencia   DateTime        @map("mes_referencia") @db.Date
+  dataVencimento  DateTime        @map("data_vencimento") @db.Date
+  dataPagamento   DateTime?       @map("data_pagamento") @db.Date
+  valor           Decimal         @db.Decimal(12, 2)
+  status          ContaStatus     @default(PENDENTE)
+  conta           ContaConta      @default(RECEITA)
+  descricao       String          @db.VarChar(120) @default("Aluguel")
+  formaPagamento  FormaPagamento? @map("forma_pagamento")
+  contrato        Contrato        @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
-  @@unique([contratoId, mesReferencia, tipo])
   @@index([status, dataVencimento])
   @@index([mesReferencia])
   @@map("contas")

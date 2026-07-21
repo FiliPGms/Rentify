@@ -1,19 +1,30 @@
 import { prisma } from '../lib/prisma.js';
 
 export async function getDashboardResumo(usuarioId: string) {
-  const [pagas, pendentes, atrasadas, empreendimentos] = await prisma.$transaction([
+  const ownerFilter = { contrato: { empreendimento: { usuarioId } } };
+
+  const [receitasPagas, despesasPagas, pendentes, atrasadas, empreendimentos] = await prisma.$transaction([
+    // Receitas pagas (para lucro líquido)
     prisma.conta.aggregate({
-      where: { status: 'PAGO', contrato: { empreendimento: { usuarioId } } },
+      where: { status: 'PAGO', conta: 'RECEITA', ...ownerFilter },
       _sum: { valor: true }
     }),
+    // Despesas pagas (para subtrair do lucro líquido)
     prisma.conta.aggregate({
-      where: { status: 'PENDENTE', contrato: { empreendimento: { usuarioId } } },
+      where: { status: 'PAGO', conta: 'DESPESA', ...ownerFilter },
       _sum: { valor: true }
     }),
+    // Pendentes (só receitas)
     prisma.conta.aggregate({
-      where: { status: 'EM_ATRASO', contrato: { empreendimento: { usuarioId } } },
+      where: { status: 'PENDENTE', conta: 'RECEITA', ...ownerFilter },
       _sum: { valor: true }
     }),
+    // Em atraso (só receitas)
+    prisma.conta.aggregate({
+      where: { status: 'EM_ATRASO', conta: 'RECEITA', ...ownerFilter },
+      _sum: { valor: true }
+    }),
+    // Rendimento por empreendimento (lucro líquido = receita − despesa)
     prisma.empreendimento.findMany({
       where: { usuarioId },
       select: {
@@ -23,7 +34,7 @@ export async function getDashboardResumo(usuarioId: string) {
           select: {
             contas: {
               where: { status: 'PAGO' },
-              select: { valor: true }
+              select: { valor: true, conta: true }
             }
           }
         }
@@ -32,18 +43,27 @@ export async function getDashboardResumo(usuarioId: string) {
     })
   ]);
 
+  const totalReceitas = Number(receitasPagas._sum.valor ?? 0);
+  const totalDespesas = Number(despesasPagas._sum.valor ?? 0);
+
   return {
-    faturamentoTotal: Number(pagas._sum.valor ?? 0),
+    lucroLiquido: totalReceitas - totalDespesas,
     pendenteTotal: Number(pendentes._sum.valor ?? 0),
     atrasadoTotal: Number(atrasadas._sum.valor ?? 0),
-    porEmpreendimento: empreendimentos.map((empreendimento) => ({
-      empreendimentoId: empreendimento.id,
-      nome: empreendimento.nome,
-      recebido: empreendimento.contratos.reduce(
-        (total, contrato) =>
-          total + contrato.contas.reduce((subtotal, conta) => subtotal + Number(conta.valor), 0),
-        0
-      )
-    }))
+    porEmpreendimento: empreendimentos.map((empreendimento) => {
+      let receita = 0;
+      let despesa = 0;
+      for (const contrato of empreendimento.contratos) {
+        for (const c of contrato.contas) {
+          if (c.conta === 'RECEITA') receita += Number(c.valor);
+          else despesa += Number(c.valor);
+        }
+      }
+      return {
+        empreendimentoId: empreendimento.id,
+        nome: empreendimento.nome,
+        recebido: receita - despesa
+      };
+    })
   };
 }

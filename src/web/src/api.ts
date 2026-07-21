@@ -29,7 +29,9 @@ export type Conta = {
   dataPagamento: string | null;
   valor: string;
   status: 'PENDENTE' | 'PAGO' | 'EM_ATRASO';
-  tipo: 'ALUGUEL' | 'CAUCAO';
+  conta: 'RECEITA' | 'DESPESA';
+  descricao: string;
+  formaPagamento: 'PIX' | 'CARTAO_CREDITO' | 'A_VISTA' | 'BOLETO' | null;
   contrato: {
     id: string;
     nomeInquilino: string;
@@ -38,7 +40,7 @@ export type Conta = {
 };
 
 export type DashboardResumo = {
-  faturamentoTotal: number;
+  lucroLiquido: number;
   pendenteTotal: number;
   atrasadoTotal: number;
   porEmpreendimento: Array<{ empreendimentoId: string; nome: string; recebido: number }>;
@@ -130,11 +132,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
-  contas: (filters: { status?: string; empreendimentoId?: string; tipo?: string }) => {
+  contas: (filters: { status?: string; empreendimentoId?: string; conta?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
     if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
-    if (filters.tipo) params.set('tipo', filters.tipo);
+    if (filters.conta) params.set('conta', filters.conta);
     return request<Conta[]>(`/contas?${params.toString()}`);
   },
   createConta: (payload: {
@@ -142,7 +144,9 @@ export const api = {
     mesReferencia: string;
     dataVencimento: string;
     valor: number;
-    tipo: 'ALUGUEL' | 'CAUCAO';
+    conta: 'RECEITA' | 'DESPESA';
+    descricao: string;
+    formaPagamento?: 'PIX' | 'CARTAO_CREDITO' | 'A_VISTA' | 'BOLETO';
   }) =>
     request<Conta>('/contas', {
       method: 'POST',
@@ -153,11 +157,20 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(dataPagamento ? { dataPagamento } : {})
     }),
-  exportContasUrl: (filters: { status?: string; empreendimentoId?: string; tipo?: string }) => {
+  despagarConta: (id: string) =>
+    request<Conta>(`/contas/${id}/pagamento`, {
+      method: 'DELETE'
+    }),
+  atualizarDescricao: (id: string, descricao: string) =>
+    request<Conta>(`/contas/${id}/descricao`, {
+      method: 'PATCH',
+      body: JSON.stringify({ descricao })
+    }),
+  exportContasUrl: (filters: { status?: string; empreendimentoId?: string; conta?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
     if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
-    if (filters.tipo) params.set('tipo', filters.tipo);
+    if (filters.conta) params.set('conta', filters.conta);
     return `${API_BASE}/contas/export?${params.toString()}`;
   },
   authHeader: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {})
