@@ -42,13 +42,15 @@ export const contaCreateSchema = z.object({
   mesReferencia: dateOnly,
   dataVencimento: dateOnly,
   valor: z.coerce.number().positive(),
-  tipo: z.enum(['ALUGUEL', 'CAUCAO']).default('ALUGUEL')
+  conta: z.enum(['RECEITA', 'DESPESA']).default('RECEITA'),
+  descricao: z.string().min(1).max(120).default('Aluguel'),
+  formaPagamento: z.enum(['PIX', 'CARTAO_CREDITO', 'A_VISTA', 'BOLETO']).optional()
 });
 
 export const contaListSchema = z.object({
   status: z.enum(['PENDENTE', 'PAGO', 'EM_ATRASO']).optional(),
   empreendimentoId: z.string().uuid().optional(),
-  tipo: z.enum(['ALUGUEL', 'CAUCAO']).optional(),
+  conta: z.enum(['RECEITA', 'DESPESA']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
@@ -57,4 +59,8 @@ export const contaExportSchema = contaListSchema.omit({ page: true, pageSize: tr
 
 export const pagamentoSchema = z.object({
   dataPagamento: dateOnly.optional()
+});
+
+export const contaUpdateDescricaoSchema = z.object({
+  descricao: z.string().min(1).max(120)
 });
