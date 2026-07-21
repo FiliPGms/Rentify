@@ -161,6 +161,10 @@ export const api = {
     request<Conta>(`/contas/${id}/pagamento`, {
       method: 'DELETE'
     }),
+  deletarConta: (id: string) =>
+    request<{ success: boolean }>(`/contas/${id}`, {
+      method: 'DELETE'
+    }),
   atualizarDescricao: (id: string, descricao: string) =>
     request<Conta>(`/contas/${id}/descricao`, {
       method: 'PATCH',

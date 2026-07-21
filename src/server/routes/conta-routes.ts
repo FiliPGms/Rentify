@@ -13,6 +13,7 @@ import {
   atualizarDescricaoConta,
   buildContasWorkbook,
   createConta,
+  deletarConta,
   desmarcarContaPaga,
   listContas,
   marcarContaPaga
@@ -90,5 +91,13 @@ contaRoutes.patch(
       req.body.descricao
     );
     sendOk(res, data);
+  })
+);
+
+contaRoutes.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    await deletarConta((req as AuthenticatedRequest).user.id, req.params.id);
+    sendOk(res, { success: true });
   })
 );
