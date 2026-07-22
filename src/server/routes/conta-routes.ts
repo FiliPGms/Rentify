@@ -14,9 +14,9 @@ import {
   buildContasWorkbook,
   createConta,
   deletarConta,
-  desmarcarContaPaga,
   listContas,
-  marcarContaPaga
+  marcarContaPaga,
+  desmarcarContaPaga
 } from '../services/conta-service.js';
 import { sendCreated, sendOk } from '../lib/response.js';
 import type { z } from 'zod';
@@ -81,6 +81,14 @@ contaRoutes.delete(
   })
 );
 
+contaRoutes.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    await deletarConta((req as AuthenticatedRequest).user.id, req.params.id);
+    sendOk(res, { success: true });
+  })
+);
+
 contaRoutes.patch(
   '/:id/descricao',
   validateBody(contaUpdateDescricaoSchema),
@@ -91,13 +99,5 @@ contaRoutes.patch(
       req.body.descricao
     );
     sendOk(res, data);
-  })
-);
-
-contaRoutes.delete(
-  '/:id',
-  asyncHandler(async (req, res) => {
-    await deletarConta((req as AuthenticatedRequest).user.id, req.params.id);
-    sendOk(res, { success: true });
   })
 );
