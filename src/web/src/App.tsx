@@ -687,7 +687,7 @@ function ContaTable({
               <td>
                 <span className={`badge ${c.status.toLowerCase()}`}>{c.status}</span>
               </td>
-              <td>
+              <td style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
                 {c.status !== 'PAGO' && (
                   <button
                     className="compact"
@@ -710,7 +710,7 @@ function ContaTable({
                 )}
                 <button
                   className="compact ghost"
-                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)', marginLeft: '0.5rem' }}
+                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                   onClick={() => setDeletingContaId(c.id)}
                   title="Deletar conta"
                 >
