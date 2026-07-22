@@ -687,38 +687,40 @@ function ContaTable({
               <td>
                 <span className={`badge ${c.status.toLowerCase()}`}>{c.status}</span>
               </td>
-              <td style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                {c.status !== 'PAGO' && (
-                  <button
-                    className="compact"
-                    onClick={() => {
-                      setDateValue(defaultDate);
-                      setPayingContaId(c.id);
-                    }}
-                  >
-                    Marcar paga
-                  </button>
-                )}
-                {c.status === 'PAGO' && (
+              <td>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                  {c.status !== 'PAGO' && (
+                    <button
+                      className="compact"
+                      onClick={() => {
+                        setDateValue(defaultDate);
+                        setPayingContaId(c.id);
+                      }}
+                    >
+                      Marcar paga
+                    </button>
+                  )}
+                  {c.status === 'PAGO' && (
+                    <button
+                      className="compact ghost"
+                      style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                      onClick={() => setUnpayingContaId(c.id)}
+                    >
+                      Desmarcar
+                    </button>
+                  )}
                   <button
                     className="compact ghost"
                     style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                    onClick={() => setUnpayingContaId(c.id)}
+                    onClick={() => setDeletingContaId(c.id)}
+                    title="Deletar conta"
                   >
-                    Desmarcar
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18"></path>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                   </button>
-                )}
-                <button
-                  className="compact ghost"
-                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                  onClick={() => setDeletingContaId(c.id)}
-                  title="Deletar conta"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 6h18"></path>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
+                </div>
               </td>
             </tr>
           ))}
