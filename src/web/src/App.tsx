@@ -582,6 +582,16 @@ function ContaTable({
     }
   }
 
+  async function saveFormaPagamento(contaId: string, valor: string) {
+    try {
+      await api.atualizarFormaPagamento(contaId, valor || null);
+      showToast('Forma de pagamento atualizada.', 'success');
+      await onPaid();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao atualizar forma de pagamento.', 'error');
+    }
+  }
+
   return (
     <>
       {payingContaId && (
@@ -680,7 +690,20 @@ function ContaTable({
                   </span>
                 )}
               </td>
-              <td>{c.formaPagamento ? formaPagamentoLabels[c.formaPagamento] ?? c.formaPagamento : '—'}</td>
+              <td>
+                <select
+                  className="inline-select"
+                  value={c.formaPagamento ?? ''}
+                  onChange={(e) => saveFormaPagamento(c.id, e.target.value)}
+                  title="Clique para alterar"
+                >
+                  <option value="">—</option>
+                  <option value="PIX">PIX</option>
+                  <option value="CARTAO_CREDITO">Cartão</option>
+                  <option value="A_VISTA">À Vista</option>
+                  <option value="BOLETO">Boleto</option>
+                </select>
+              </td>
               <td>{new Date(c.mesReferencia).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: '2-digit', year: 'numeric' })}</td>
               <td>{new Date(c.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
               <td>{money.format(Number(c.valor))}</td>

@@ -64,3 +64,7 @@ export const pagamentoSchema = z.object({
 export const contaUpdateDescricaoSchema = z.object({
   descricao: z.string().min(1).max(120)
 });
+
+export const contaUpdateFormaPagamentoSchema = z.object({
+  formaPagamento: z.enum(['PIX', 'CARTAO_CREDITO', 'A_VISTA', 'BOLETO']).nullable()
+});

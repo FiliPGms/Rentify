@@ -207,6 +207,26 @@ export async function atualizarDescricaoConta(
   });
 }
 
+export async function atualizarFormaPagamentoConta(
+  usuarioId: string,
+  contaId: string,
+  formaPagamento: 'PIX' | 'CARTAO_CREDITO' | 'A_VISTA' | 'BOLETO' | null
+) {
+  const conta = await prisma.conta.findFirst({
+    where: { id: contaId, contrato: { empreendimento: { usuarioId } } }
+  });
+
+  if (!conta) {
+    throw new HttpError(404, 'NOT_FOUND', 'Conta nao encontrada.');
+  }
+
+  return prisma.conta.update({
+    where: { id: conta.id },
+    data: { formaPagamento },
+    include: includeConta
+  });
+}
+
 export async function atualizarAtrasos() {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);

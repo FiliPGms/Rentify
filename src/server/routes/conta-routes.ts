@@ -4,6 +4,7 @@ import {
   contaExportSchema,
   contaListSchema,
   contaUpdateDescricaoSchema,
+  contaUpdateFormaPagamentoSchema,
   pagamentoSchema
 } from '../domain/schemas.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
@@ -11,6 +12,7 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
   atualizarDescricaoConta,
+  atualizarFormaPagamentoConta,
   buildContasWorkbook,
   createConta,
   deletarConta,
@@ -89,6 +91,19 @@ contaRoutes.patch(
       (req as AuthenticatedRequest).user.id,
       req.params.id,
       req.body.descricao
+    );
+    sendOk(res, data);
+  })
+);
+
+contaRoutes.patch(
+  '/:id/forma-pagamento',
+  validateBody(contaUpdateFormaPagamentoSchema),
+  asyncHandler(async (req, res) => {
+    const data = await atualizarFormaPagamentoConta(
+      (req as AuthenticatedRequest).user.id,
+      req.params.id,
+      req.body.formaPagamento
     );
     sendOk(res, data);
   })

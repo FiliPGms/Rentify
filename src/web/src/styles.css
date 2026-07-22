@@ -504,6 +504,28 @@ tr:hover td {
   outline: none;
 }
 
+.inline-select {
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.inline-select option {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.inline-select:hover,
+.inline-select:focus {
+  border-color: var(--brand);
+}
+
 .muted {
   color: var(--muted);
 }

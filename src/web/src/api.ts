@@ -170,6 +170,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ descricao })
     }),
+  atualizarFormaPagamento: (id: string, formaPagamento: string | null) =>
+    request<Conta>(`/contas/${id}/forma-pagamento`, {
+      method: 'PATCH',
+      body: JSON.stringify({ formaPagamento })
+    }),
   exportContasUrl: (filters: { status?: string; empreendimentoId?: string; conta?: string }) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
