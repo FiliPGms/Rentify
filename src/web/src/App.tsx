@@ -96,6 +96,14 @@ function AuthScreen({
 }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showAuthToast(message: string, type: 'success' | 'error' = 'success') {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,7 +122,8 @@ function AuthScreen({
               senha: String(form.get('senha'))
             });
       setToken(result.token);
-      onAuthenticated();
+      showAuthToast(mode === 'login' ? 'Login efetuado com sucesso!' : 'Cadastro realizado com sucesso!');
+      setTimeout(() => onAuthenticated(), 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha na autenticacao.');
     }
@@ -163,6 +172,14 @@ function AuthScreen({
           </form>
         </section>
       </main>
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast ${toast.type}`}>
+            <span className="toast-icon">{toast.type === 'success' ? '✓' : '✕'}</span>
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -248,11 +265,11 @@ function Shell({
       <Dashboard dashboard={dashboard} />
 
       <section className="grid-two">
-        <EmpreendimentoForm onCreated={load} />
-        <ContratoForm empreendimentos={empreendimentos} onCreated={load} />
+        <EmpreendimentoForm onCreated={load} showToast={showToast} />
+        <ContratoForm empreendimentos={empreendimentos} onCreated={load} showToast={showToast} />
       </section>
 
-      <ContaForm contratos={contratos} onCreated={load} />
+      <ContaForm contratos={contratos} onCreated={load} showToast={showToast} />
 
       <section className="panel">
         <div className="section-head">
@@ -364,141 +381,221 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: '
   );
 }
 
-function EmpreendimentoForm({ onCreated }: { onCreated: () => Promise<void> }) {
+function EmpreendimentoForm({ onCreated, showToast }: { onCreated: () => Promise<void>; showToast: (msg: string, type?: 'success' | 'error') => void }) {
+  const [successModal, setSuccessModal] = useState(false);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    await api.createEmpreendimento({
-      nome: String(form.get('nome')),
-      endereco: String(form.get('endereco')),
-      valorPadrao: Number(form.get('valorPadrao'))
-    });
-    event.currentTarget.reset();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    try {
+      await api.createEmpreendimento({
+        nome: String(form.get('nome')),
+        endereco: String(form.get('endereco')),
+        valorPadrao: Number(form.get('valorPadrao'))
+      });
+      formElement.reset();
+      setSuccessModal(true);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao cadastrar empreendimento.', 'error');
+    }
+  }
+
+  async function closeModal() {
+    setSuccessModal(false);
     await onCreated();
   }
 
   return (
-    <form className="panel form-stack" onSubmit={submit}>
-      <h2>Novo empreendimento</h2>
-      <input name="nome" placeholder="Nome" required />
-      <input name="endereco" placeholder="Endereco" required />
-      <input name="valorPadrao" placeholder="Valor padrao" type="number" step="0.01" min="0" required />
-      <button type="submit">Cadastrar empreendimento</button>
-    </form>
+    <>
+      <form className="panel form-stack" onSubmit={submit}>
+        <h2>Novo empreendimento</h2>
+        <input name="nome" placeholder="Nome" required />
+        <input name="endereco" placeholder="Endereco" required />
+        <input name="valorPadrao" placeholder="Valor padrao" type="number" step="0.01" min="0" required />
+        <button type="submit">Cadastrar empreendimento</button>
+      </form>
+      {successModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+          <div className="modal-box">
+            <span className="modal-success-icon">✓</span>
+            <h3>Empreendimento cadastrado!</h3>
+            <p>O empreendimento foi adicionado com sucesso.</p>
+            <div className="modal-actions">
+              <button className="confirm" type="button" onClick={closeModal}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 function ContratoForm({
   empreendimentos,
-  onCreated
+  onCreated,
+  showToast
 }: {
   empreendimentos: Empreendimento[];
   onCreated: () => Promise<void>;
+  showToast: (msg: string, type?: 'success' | 'error') => void;
 }) {
+  const [successModal, setSuccessModal] = useState(false);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    await api.createContrato({
-      empreendimentoId: String(form.get('empreendimentoId')),
-      nomeInquilino: String(form.get('nomeInquilino')),
-      dataVencimentoPadrao: String(form.get('dataVencimentoPadrao')),
-      status: 'ATIVO'
-    });
-    event.currentTarget.reset();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    try {
+      await api.createContrato({
+        empreendimentoId: String(form.get('empreendimentoId')),
+        nomeInquilino: String(form.get('nomeInquilino')),
+        dataVencimentoPadrao: String(form.get('dataVencimentoPadrao')),
+        status: 'ATIVO'
+      });
+      formElement.reset();
+      setSuccessModal(true);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao cadastrar contrato.', 'error');
+    }
+  }
+
+  async function closeModal() {
+    setSuccessModal(false);
     await onCreated();
   }
 
   return (
-    <form className="panel form-stack" onSubmit={submit}>
-      <h2>Novo contrato</h2>
-      <select name="empreendimentoId" required>
-        <option value="">Selecione empreendimento</option>
-        {empreendimentos.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.nome}
-          </option>
-        ))}
-      </select>
-      <input name="nomeInquilino" placeholder="Nome do inquilino" required />
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="dataVencimentoPadrao">Vencimento Padrão (Primeira Parcela)</label>
-        <input id="dataVencimentoPadrao" name="dataVencimentoPadrao" type="date" required />
-      </div>
-      <button type="submit">Cadastrar contrato</button>
-    </form>
+    <>
+      <form className="panel form-stack" onSubmit={submit}>
+        <h2>Novo contrato</h2>
+        <select name="empreendimentoId" required>
+          <option value="">Selecione empreendimento</option>
+          {empreendimentos.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.nome}
+            </option>
+          ))}
+        </select>
+        <input name="nomeInquilino" placeholder="Nome do inquilino" required />
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="dataVencimentoPadrao">Vencimento Padrão (Primeira Parcela)</label>
+          <input id="dataVencimentoPadrao" name="dataVencimentoPadrao" type="date" required />
+        </div>
+        <button type="submit">Cadastrar contrato</button>
+      </form>
+      {successModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+          <div className="modal-box">
+            <span className="modal-success-icon">✓</span>
+            <h3>Contrato cadastrado!</h3>
+            <p>O contrato foi adicionado com sucesso.</p>
+            <div className="modal-actions">
+              <button className="confirm" type="button" onClick={closeModal}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
-function ContaForm({ contratos, onCreated }: { contratos: Contrato[]; onCreated: () => Promise<void> }) {
+function ContaForm({ contratos, onCreated, showToast }: { contratos: Contrato[]; onCreated: () => Promise<void>; showToast: (msg: string, type?: 'success' | 'error') => void }) {
+  const [successModal, setSuccessModal] = useState(false);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const mesRaw = String(form.get('mesReferencia')); // YYYY-MM
     const mesReferencia = mesRaw ? `${mesRaw}-01` : '';
     const fp = String(form.get('formaPagamento'));
 
-    await api.createConta({
-      contratoId: String(form.get('contratoId')),
-      mesReferencia,
-      dataVencimento: String(form.get('dataVencimento')),
-      valor: Number(form.get('valor')),
-      conta: String(form.get('conta')) as 'RECEITA' | 'DESPESA',
-      descricao: String(form.get('descricao')),
-      ...(fp ? { formaPagamento: fp as 'PIX' | 'CARTAO_CREDITO' | 'A_VISTA' | 'BOLETO' } : {})
-    });
-    event.currentTarget.reset();
+    try {
+      await api.createConta({
+        contratoId: String(form.get('contratoId')),
+        mesReferencia,
+        dataVencimento: String(form.get('dataVencimento')),
+        valor: Number(form.get('valor')),
+        conta: String(form.get('conta')) as 'RECEITA' | 'DESPESA',
+        descricao: String(form.get('descricao')),
+        ...(fp ? { formaPagamento: fp as 'PIX' | 'CARTAO_CREDITO' | 'A_VISTA' | 'BOLETO' } : {})
+      });
+      formElement.reset();
+      setSuccessModal(true);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao criar conta.', 'error');
+    }
+  }
+
+  async function closeModal() {
+    setSuccessModal(false);
     await onCreated();
   }
 
   return (
-    <form className="panel inline-form" onSubmit={submit}>
-      <h2>Nova conta</h2>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="contratoId">Contrato</label>
-        <select id="contratoId" name="contratoId" required>
-          <option value="">Selecione o contrato</option>
-          {contratos.map((contrato) => (
-            <option key={contrato.id} value={contrato.id}>
-              {contrato.nomeInquilino} - {contrato.empreendimento.nome}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="conta">Conta</label>
-        <select id="conta" name="conta" required>
-          <option value="RECEITA">Receita</option>
-          <option value="DESPESA">Despesa</option>
-        </select>
-      </div>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="descricao">Descrição</label>
-        <input id="descricao" name="descricao" placeholder="Ex: Aluguel, Internet, Condomínio" required />
-      </div>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="mesReferencia">Mês de Referência</label>
-        <input id="mesReferencia" name="mesReferencia" type="month" required />
-      </div>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="dataVencimento">Data de Vencimento</label>
-        <input id="dataVencimento" name="dataVencimento" type="date" required />
-      </div>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="valor">Valor</label>
-        <input id="valor" name="valor" type="number" min="0" step="0.01" placeholder="Valor (R$)" required />
-      </div>
-      <div className="form-group">
-        <label className="eyebrow" htmlFor="formaPagamento">Forma de Pagamento</label>
-        <select id="formaPagamento" name="formaPagamento">
-          <option value="">Não informado</option>
-          <option value="PIX">PIX</option>
-          <option value="CARTAO_CREDITO">Cartão de Crédito</option>
-          <option value="A_VISTA">À Vista</option>
-          <option value="BOLETO">Boleto</option>
-        </select>
-      </div>
-      <button type="submit">Criar conta</button>
-    </form>
+    <>
+      <form className="panel inline-form" onSubmit={submit}>
+        <h2>Nova conta</h2>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="contratoId">Contrato</label>
+          <select id="contratoId" name="contratoId" required>
+            <option value="">Selecione o contrato</option>
+            {contratos.map((contrato) => (
+              <option key={contrato.id} value={contrato.id}>
+                {contrato.nomeInquilino} - {contrato.empreendimento.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="conta">Conta</label>
+          <select id="conta" name="conta" required>
+            <option value="RECEITA">Receita</option>
+            <option value="DESPESA">Despesa</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="descricao">Descrição</label>
+          <input id="descricao" name="descricao" placeholder="Ex: Aluguel, Internet, Condomínio" required />
+        </div>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="mesReferencia">Mês de Referência</label>
+          <input id="mesReferencia" name="mesReferencia" type="month" required />
+        </div>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="dataVencimento">Data de Vencimento</label>
+          <input id="dataVencimento" name="dataVencimento" type="date" required />
+        </div>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="valor">Valor</label>
+          <input id="valor" name="valor" type="number" min="0" step="0.01" placeholder="Valor (R$)" required />
+        </div>
+        <div className="form-group">
+          <label className="eyebrow" htmlFor="formaPagamento">Forma de Pagamento</label>
+          <select id="formaPagamento" name="formaPagamento">
+            <option value="">Não informado</option>
+            <option value="PIX">PIX</option>
+            <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+            <option value="A_VISTA">À Vista</option>
+            <option value="BOLETO">Boleto</option>
+          </select>
+        </div>
+        <button type="submit">Criar conta</button>
+      </form>
+      {successModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+          <div className="modal-box">
+            <span className="modal-success-icon">✓</span>
+            <h3>Conta criada!</h3>
+            <p>A conta foi adicionada com sucesso ao sistema.</p>
+            <div className="modal-actions">
+              <button className="confirm" type="button" onClick={closeModal}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
