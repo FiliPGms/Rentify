@@ -85,6 +85,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   }
 
+  // Handle 204 No Content explicitly
+  if (response.status === 204) {
+    return { success: true } as unknown as T;
+  }
+
   // Parse JSON safely to handle proxy errors or empty responses
   let json: ApiResponse<T> | null = null;
   const text = await response.text();
