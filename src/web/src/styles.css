@@ -309,7 +309,7 @@ h2 {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 200px 1fr 140px;
+  grid-template-columns: 200px 1fr 140px auto;
   gap: 1.5rem;
   align-items: center;
   padding: 0.65rem 0;

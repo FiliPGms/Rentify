@@ -9,7 +9,8 @@ export const dashboardRoutes = Router();
 dashboardRoutes.get(
   '/resumo',
   asyncHandler(async (req, res) => {
-    const data = await getDashboardResumo((req as AuthenticatedRequest).user.id);
+    const empreendimentoId = req.query.empreendimentoId as string | undefined;
+    const data = await getDashboardResumo((req as AuthenticatedRequest).user.id, empreendimentoId);
     sendOk(res, data);
   })
 );

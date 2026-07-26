@@ -114,12 +114,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
-  dashboard: () => request<DashboardResumo>('/dashboard/resumo'),
+  dashboard: (empreendimentoId?: string) => {
+    const params = new URLSearchParams();
+    if (empreendimentoId) params.set('empreendimentoId', empreendimentoId);
+    return request<DashboardResumo>(`/dashboard/resumo?${params.toString()}`);
+  },
   empreendimentos: () => request<Empreendimento[]>('/empreendimentos'),
   createEmpreendimento: (payload: { nome: string; endereco: string; valorPadrao: number }) =>
     request<Empreendimento>('/empreendimentos', {
       method: 'POST',
       body: JSON.stringify(payload)
+    }),
+  deletarEmpreendimento: (id: string) =>
+    request<{ success: boolean }>(`/empreendimentos/${id}`, {
+      method: 'DELETE'
     }),
   contratos: () => request<Contrato[]>('/contratos'),
   createContrato: (payload: {
