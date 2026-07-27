@@ -43,12 +43,12 @@ export async function getDashboardResumo(
       }),
       // Pendentes (só receitas)
       prisma.conta.aggregate({
-        where: { status: 'PENDENTE', conta: 'RECEITA', ...ownerBase },
+        where: { status: 'PENDENTE', conta: 'RECEITA', ...ownerFilter },
         _sum: { valor: true }
       }),
       // Em atraso (só receitas)
       prisma.conta.aggregate({
-        where: { status: 'EM_ATRASO', conta: 'RECEITA', ...ownerBase },
+        where: { status: 'EM_ATRASO', conta: 'RECEITA', ...ownerFilter },
         _sum: { valor: true }
       }),
       // Rendimento por empreendimento (lucro líquido = receita − despesa)
