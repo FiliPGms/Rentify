@@ -199,6 +199,7 @@ function Shell({
   const [dashboard, setDashboard] = useState<DashboardResumo | null>(null);
   const [status, setStatus] = useState('');
   const [empreendimentoId, setEmpreendimentoId] = useState('');
+  const [dashboardEmpreendimentoId, setDashboardEmpreendimentoId] = useState('');
   const [conta, setConta] = useState('');
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; id: number } | null>(null);
@@ -217,7 +218,7 @@ function Shell({
         api.empreendimentos(),
         api.contratos(),
         api.contas({ status, empreendimentoId, conta }),
-        api.dashboard()
+        api.dashboard(dashboardEmpreendimentoId)
       ]);
       setEmpreendimentos(nextEmpreendimentos);
       setContratos(nextContratos);
@@ -230,7 +231,7 @@ function Shell({
 
   useEffect(() => {
     void load();
-  }, [status, empreendimentoId, conta]);
+  }, [status, empreendimentoId, dashboardEmpreendimentoId, conta]);
 
   function logout() {
     clearToken();
@@ -262,7 +263,22 @@ function Shell({
 
       {error && <p className="error">{error}</p>}
 
-      <Dashboard dashboard={dashboard} />
+      <Dashboard 
+        dashboard={dashboard} 
+        empreendimentos={empreendimentos}
+        dashboardEmpreendimentoId={dashboardEmpreendimentoId}
+        setDashboardEmpreendimentoId={setDashboardEmpreendimentoId}
+        onDeleteEmpreendimento={async (id) => {
+          try {
+            await api.deletarEmpreendimento(id);
+            showToast('Empreendimento deletado.', 'success');
+            if (dashboardEmpreendimentoId === id) setDashboardEmpreendimentoId('');
+            else await load();
+          } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Erro ao deletar empreendimento.', 'error');
+          }
+        }}
+      />
 
       <section className="grid-two">
         <EmpreendimentoForm onCreated={load} showToast={showToast} />
@@ -348,27 +364,89 @@ function Shell({
   );
 }
 
-function Dashboard({ dashboard }: { dashboard: DashboardResumo | null }) {
+function Dashboard({ 
+  dashboard,
+  empreendimentos,
+  dashboardEmpreendimentoId,
+  setDashboardEmpreendimentoId,
+  onDeleteEmpreendimento
+}: { 
+  dashboard: DashboardResumo | null;
+  empreendimentos: Empreendimento[];
+  dashboardEmpreendimentoId: string;
+  setDashboardEmpreendimentoId: (id: string) => void;
+  onDeleteEmpreendimento: (id: string) => void;
+}) {
   const max = Math.max(...(dashboard?.porEmpreendimento.map((item) => item.recebido) ?? [1]), 1);
+  const [deletingEmpreendimentoId, setDeletingEmpreendimentoId] = useState<string | null>(null);
 
   return (
-    <section className="dashboard">
-      <Metric label="Lucro Líquido" value={money.format(dashboard?.lucroLiquido ?? 0)} />
-      <Metric label="Pendente" value={money.format(dashboard?.pendenteTotal ?? 0)} />
-      <Metric label="Em atraso" value={money.format(dashboard?.atrasadoTotal ?? 0)} tone="danger" />
-      <div className="panel chart">
-        <p className="eyebrow">Lucro líquido por empreendimento</p>
-        {(dashboard?.porEmpreendimento ?? []).map((item) => (
-          <div className="bar-row" key={item.empreendimentoId}>
-            <span>{item.nome}</span>
-            <div className="bar-track">
-              <div className="bar-fill" style={{ width: `${(item.recebido / max) * 100}%` }} />
-            </div>
-            <strong>{money.format(item.recebido)}</strong>
-          </div>
-        ))}
+    <>
+      <div className="section-head" style={{ marginBottom: '1rem' }}>
+        <div>
+          <h2>Resumo</h2>
+        </div>
+        <div className="filters">
+          <select value={dashboardEmpreendimentoId} onChange={(e) => setDashboardEmpreendimentoId(e.target.value)}>
+            <option value="">Todos empreendimentos</option>
+            {empreendimentos.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.nome}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-    </section>
+      <section className="dashboard">
+        <Metric label="Lucro Líquido" value={money.format(dashboard?.lucroLiquido ?? 0)} />
+        <Metric label="Pendente" value={money.format(dashboard?.pendenteTotal ?? 0)} />
+        <Metric label="Em atraso" value={money.format(dashboard?.atrasadoTotal ?? 0)} tone="danger" />
+        <div className="panel chart">
+          <p className="eyebrow">Lucro líquido por empreendimento</p>
+          {(dashboard?.porEmpreendimento ?? []).map((item) => (
+            <div className="bar-row" key={item.empreendimentoId}>
+              <span>{item.nome}</span>
+              <div className="bar-track">
+                <div className="bar-fill" style={{ width: `${(item.recebido / max) * 100}%` }} />
+              </div>
+              <strong>{money.format(item.recebido)}</strong>
+              <button
+                className="compact ghost"
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger)', marginLeft: '0.5rem' }}
+                onClick={() => setDeletingEmpreendimentoId(item.empreendimentoId)}
+                title="Deletar empreendimento"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {deletingEmpreendimentoId && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDeletingEmpreendimentoId(null); }}>
+          <div className="modal-box">
+            <h3>Excluir Empreendimento</h3>
+            <p>
+              Tem certeza que deseja deletar este empreendimento?
+              Isso apagará também todos os contratos e contas vinculadas.
+            </p>
+            <div className="modal-actions">
+              <button className="ghost" type="button" onClick={() => setDeletingEmpreendimentoId(null)}>Cancelar</button>
+              <button className="confirm" style={{ background: 'var(--danger)' }} type="button" onClick={() => {
+                onDeleteEmpreendimento(deletingEmpreendimentoId);
+                setDeletingEmpreendimentoId(null);
+              }}>
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

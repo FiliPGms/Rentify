@@ -1,7 +1,9 @@
 import { prisma } from '../lib/prisma.js';
 
-export async function getDashboardResumo(usuarioId: string) {
-  const ownerFilter = { contrato: { empreendimento: { usuarioId } } };
+export async function getDashboardResumo(usuarioId: string, empreendimentoId?: string) {
+  const ownerFilter = empreendimentoId
+    ? { contrato: { empreendimentoId, empreendimento: { usuarioId } } }
+    : { contrato: { empreendimento: { usuarioId } } };
 
   const [receitasPagas, despesasPagas, pendentes, atrasadas, empreendimentos] = await prisma.$transaction([
     // Receitas pagas (para lucro líquido)

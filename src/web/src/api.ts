@@ -85,6 +85,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   }
 
+  // Handle 204 No Content explicitly
+  if (response.status === 204) {
+    return { success: true } as unknown as T;
+  }
+
   // Parse JSON safely to handle proxy errors or empty responses
   let json: ApiResponse<T> | null = null;
   const text = await response.text();
@@ -114,12 +119,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
-  dashboard: () => request<DashboardResumo>('/dashboard/resumo'),
+  dashboard: (empreendimentoId?: string) => {
+    const params = new URLSearchParams();
+    if (empreendimentoId) params.set('empreendimentoId', empreendimentoId);
+    return request<DashboardResumo>(`/dashboard/resumo?${params.toString()}`);
+  },
   empreendimentos: () => request<Empreendimento[]>('/empreendimentos'),
   createEmpreendimento: (payload: { nome: string; endereco: string; valorPadrao: number }) =>
     request<Empreendimento>('/empreendimentos', {
       method: 'POST',
       body: JSON.stringify(payload)
+    }),
+  deletarEmpreendimento: (id: string) =>
+    request<{ success: boolean }>(`/empreendimentos/${id}`, {
+      method: 'DELETE'
     }),
   contratos: () => request<Contrato[]>('/contratos'),
   createContrato: (payload: {
