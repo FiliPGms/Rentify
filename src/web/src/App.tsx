@@ -200,6 +200,7 @@ function Shell({
   const [status, setStatus] = useState('');
   const [empreendimentoId, setEmpreendimentoId] = useState('');
   const [dashboardEmpreendimentoId, setDashboardEmpreendimentoId] = useState('');
+  const [dashboardMes, setDashboardMes] = useState('');
   const [conta, setConta] = useState('');
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; id: number } | null>(null);
@@ -218,7 +219,7 @@ function Shell({
         api.empreendimentos(),
         api.contratos(),
         api.contas({ status, empreendimentoId, conta }),
-        api.dashboard(dashboardEmpreendimentoId)
+        api.dashboard(dashboardEmpreendimentoId, dashboardMes)
       ]);
       setEmpreendimentos(nextEmpreendimentos);
       setContratos(nextContratos);
@@ -231,7 +232,7 @@ function Shell({
 
   useEffect(() => {
     void load();
-  }, [status, empreendimentoId, dashboardEmpreendimentoId, conta]);
+  }, [status, empreendimentoId, dashboardEmpreendimentoId, dashboardMes, conta]);
 
   function logout() {
     clearToken();
@@ -268,6 +269,8 @@ function Shell({
         empreendimentos={empreendimentos}
         dashboardEmpreendimentoId={dashboardEmpreendimentoId}
         setDashboardEmpreendimentoId={setDashboardEmpreendimentoId}
+        dashboardMes={dashboardMes}
+        setDashboardMes={setDashboardMes}
         onDeleteEmpreendimento={async (id) => {
           try {
             await api.deletarEmpreendimento(id);
@@ -369,12 +372,16 @@ function Dashboard({
   empreendimentos,
   dashboardEmpreendimentoId,
   setDashboardEmpreendimentoId,
+  dashboardMes,
+  setDashboardMes,
   onDeleteEmpreendimento
 }: { 
   dashboard: DashboardResumo | null;
   empreendimentos: Empreendimento[];
   dashboardEmpreendimentoId: string;
   setDashboardEmpreendimentoId: (id: string) => void;
+  dashboardMes: string;
+  setDashboardMes: (mes: string) => void;
   onDeleteEmpreendimento: (id: string) => void;
 }) {
   const max = Math.max(...(dashboard?.porEmpreendimento.map((item) => item.recebido) ?? [1]), 1);
@@ -392,6 +399,14 @@ function Dashboard({
             {empreendimentos.map((emp) => (
               <option key={emp.id} value={emp.id}>
                 {emp.nome}
+              </option>
+            ))}
+          </select>
+          <select value={dashboardMes} onChange={(e) => setDashboardMes(e.target.value)}>
+            <option value="">Todos os meses</option>
+            {(dashboard?.mesesDisponiveis ?? []).map((mes) => (
+              <option key={mes} value={mes}>
+                {new Date(mes).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: 'long', year: 'numeric' })}
               </option>
             ))}
           </select>

@@ -44,6 +44,7 @@ export type DashboardResumo = {
   pendenteTotal: number;
   atrasadoTotal: number;
   porEmpreendimento: Array<{ empreendimentoId: string; nome: string; recebido: number }>;
+  mesesDisponiveis: string[];
 };
 
 let token = localStorage.getItem('lendario_token') ?? '';
@@ -119,9 +120,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
-  dashboard: (empreendimentoId?: string) => {
+  dashboard: (empreendimentoId?: string, mesReferencia?: string) => {
     const params = new URLSearchParams();
     if (empreendimentoId) params.set('empreendimentoId', empreendimentoId);
+    if (mesReferencia) params.set('mesReferencia', mesReferencia);
     return request<DashboardResumo>(`/dashboard/resumo?${params.toString()}`);
   },
   empreendimentos: () => request<Empreendimento[]>('/empreendimentos'),
