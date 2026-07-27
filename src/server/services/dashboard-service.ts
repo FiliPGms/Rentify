@@ -10,13 +10,22 @@ export async function getDashboardResumo(
     ? { contrato: { empreendimentoId, empreendimento: { usuarioId } } }
     : { contrato: { empreendimento: { usuarioId } } };
 
-  // Adiciona filtro de mês se fornecido
-  const mesFilter = mesReferencia ? { mesReferencia: new Date(mesReferencia) } : {};
+  // Filtro de mês como range UTC: >= primeiro dia do mês, < primeiro dia do mês seguinte
+  // Isso evita problemas de timezone onde a data armazenada pode ter offset de horas
+  function buildMesRange(mes: string) {
+    const start = new Date(mes); // ex: 2026-07-01T00:00:00.000Z
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setUTCMonth(end.getUTCMonth() + 1); // primeiro dia do mês seguinte
+    return { gte: start, lt: end };
+  }
+
+  const mesFilter = mesReferencia ? { mesReferencia: buildMesRange(mesReferencia) } : {};
   const ownerFilter = { ...ownerBase, ...mesFilter };
 
   // Filtro de mês para o gráfico por empreendimento
   const contasMesWhere = mesReferencia
-    ? { status: 'PAGO' as const, mesReferencia: new Date(mesReferencia) }
+    ? { status: 'PAGO' as const, mesReferencia: buildMesRange(mesReferencia) }
     : { status: 'PAGO' as const };
 
   const [receitasPagas, despesasPagas, pendentes, atrasadas, empreendimentos, mesesDisponiveis] =
