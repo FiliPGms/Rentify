@@ -10,14 +10,15 @@ export async function getDashboardResumo(
     ? { contrato: { empreendimentoId, empreendimento: { usuarioId } } }
     : { contrato: { empreendimento: { usuarioId } } };
 
-  // Filtro de mês como range UTC: >= primeiro dia do mês, < primeiro dia do mês seguinte
-  // Isso evita problemas de timezone onde a data armazenada pode ter offset de horas
+  // Filtro de mês como range para campo @db.Date do MySQL.
+  // Usamos lte com o último dia do mês (não lt com o primeiro do mês seguinte),
+  // pois MySQL compara DATE '2026-08-01' como igual a DATETIME '2026-08-01 00:00:00',
+  // fazendo o lt falhar e incluir erroneamente o primeiro dia do mês seguinte.
   function buildMesRange(mes: string) {
-    const start = new Date(mes); // ex: 2026-07-01T00:00:00.000Z
-    start.setUTCHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setUTCMonth(end.getUTCMonth() + 1); // primeiro dia do mês seguinte
-    return { gte: start, lt: end };
+    const [year, month] = mes.split('-').map(Number);
+    const firstDay = new Date(Date.UTC(year, month - 1, 1));
+    const lastDay = new Date(Date.UTC(year, month, 0)); // dia 0 do mês seguinte = último dia do mês atual
+    return { gte: firstDay, lte: lastDay };
   }
 
   const mesFilter = mesReferencia ? { mesReferencia: buildMesRange(mesReferencia) } : {};
