@@ -10,7 +10,12 @@ dashboardRoutes.get(
   '/resumo',
   asyncHandler(async (req, res) => {
     const empreendimentoId = req.query.empreendimentoId as string | undefined;
-    const data = await getDashboardResumo((req as AuthenticatedRequest).user.id, empreendimentoId);
+    const mesReferencia = req.query.mesReferencia as string | undefined;
+    const data = await getDashboardResumo(
+      (req as AuthenticatedRequest).user.id,
+      empreendimentoId,
+      mesReferencia
+    );
     sendOk(res, data);
   })
 );
