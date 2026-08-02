@@ -88,14 +88,15 @@ export function EnderecoForm() {
           />
         </div>
         <div className="form-group form-group--checkbox">
-          <label className="checkbox-label">
+          <div className="checkbox-wrap">
             <input
               type="checkbox"
+              id="semNumero"
               checked={semNumero}
               onChange={(e) => setSemNumero(e.target.checked)}
             />
-            Sem número (SN)
-          </label>
+            <span>Sem número (SN)</span>
+          </div>
         </div>
       </div>
 
