@@ -5,10 +5,41 @@ import { prisma } from '../lib/prisma.js';
 const selectEmpreendimento = {
   id: true,
   nome: true,
-  endereco: true,
+  tipo: true,
+  statusImovel: true,
+  inscricaoIptu: true,
   valorPadrao: true,
+  endereco: {
+    select: {
+      id: true,
+      cep: true,
+      rua: true,
+      numero: true,
+      bairro: true,
+      cidade: true,
+      estado: true
+    }
+  },
   createdAt: true,
   updatedAt: true
+};
+
+type EnderecoInput = {
+  cep: string;
+  rua: string;
+  numero?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+};
+
+type EmpreendimentoCreateInput = {
+  nome: string;
+  tipo: 'CASA' | 'APARTAMENTO' | 'COMERCIAL' | 'OUTRO';
+  statusImovel?: 'DISPONIVEL' | 'ALUGADO' | 'MANUTENCAO';
+  inscricaoIptu?: string;
+  valorPadrao: number;
+  endereco: EnderecoInput;
 };
 
 export async function listEmpreendimentos(usuarioId: string) {
@@ -21,14 +52,26 @@ export async function listEmpreendimentos(usuarioId: string) {
 
 export async function createEmpreendimento(
   usuarioId: string,
-  input: { nome: string; endereco: string; valorPadrao: number }
+  input: EmpreendimentoCreateInput
 ) {
   return prisma.empreendimento.create({
     data: {
       usuarioId,
       nome: input.nome,
-      endereco: input.endereco,
-      valorPadrao: new Prisma.Decimal(input.valorPadrao)
+      tipo: input.tipo,
+      statusImovel: input.statusImovel ?? 'DISPONIVEL',
+      inscricaoIptu: input.inscricaoIptu ?? null,
+      valorPadrao: new Prisma.Decimal(input.valorPadrao),
+      endereco: {
+        create: {
+          cep: input.endereco.cep,
+          rua: input.endereco.rua,
+          numero: input.endereco.numero ?? null,
+          bairro: input.endereco.bairro,
+          cidade: input.endereco.cidade,
+          estado: input.endereco.estado
+        }
+      }
     },
     select: selectEmpreendimento
   });
@@ -37,7 +80,7 @@ export async function createEmpreendimento(
 export async function updateEmpreendimento(
   usuarioId: string,
   id: string,
-  input: Partial<{ nome: string; endereco: string; valorPadrao: number }>
+  input: Partial<EmpreendimentoCreateInput>
 ) {
   await assertOwnsEmpreendimento(usuarioId, id);
 
@@ -45,9 +88,35 @@ export async function updateEmpreendimento(
     where: { id },
     data: {
       ...(input.nome ? { nome: input.nome } : {}),
-      ...(input.endereco ? { endereco: input.endereco } : {}),
+      ...(input.tipo ? { tipo: input.tipo } : {}),
+      ...(input.statusImovel ? { statusImovel: input.statusImovel } : {}),
+      ...(input.inscricaoIptu !== undefined ? { inscricaoIptu: input.inscricaoIptu } : {}),
       ...(input.valorPadrao !== undefined
         ? { valorPadrao: new Prisma.Decimal(input.valorPadrao) }
+        : {}),
+      ...(input.endereco
+        ? {
+            endereco: {
+              upsert: {
+                create: {
+                  cep: input.endereco.cep,
+                  rua: input.endereco.rua,
+                  numero: input.endereco.numero ?? null,
+                  bairro: input.endereco.bairro,
+                  cidade: input.endereco.cidade,
+                  estado: input.endereco.estado
+                },
+                update: {
+                  cep: input.endereco.cep,
+                  rua: input.endereco.rua,
+                  numero: input.endereco.numero ?? null,
+                  bairro: input.endereco.bairro,
+                  cidade: input.endereco.cidade,
+                  estado: input.endereco.estado
+                }
+              }
+            }
+          }
         : {})
     },
     select: selectEmpreendimento

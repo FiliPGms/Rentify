@@ -13,10 +13,22 @@ export const loginSchema = z.object({
   senha: z.string().min(1)
 });
 
+export const enderecoSchema = z.object({
+  cep: z.string().regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
+  rua: z.string().min(2).max(160),
+  numero: z.string().max(10).optional(),
+  bairro: z.string().min(2).max(100),
+  cidade: z.string().min(2).max(100),
+  estado: z.string().length(2, 'Use a sigla do estado (ex: SP)')
+});
+
 export const empreendimentoCreateSchema = z.object({
   nome: z.string().min(2).max(140),
-  endereco: z.string().min(2).max(255),
-  valorPadrao: z.coerce.number().positive()
+  tipo: z.enum(['CASA', 'APARTAMENTO', 'COMERCIAL', 'OUTRO']),
+  statusImovel: z.enum(['DISPONIVEL', 'ALUGADO', 'MANUTENCAO']).default('DISPONIVEL'),
+  inscricaoIptu: z.string().max(30).optional(),
+  valorPadrao: z.coerce.number().positive(),
+  endereco: enderecoSchema
 });
 
 export const empreendimentoUpdateSchema = empreendimentoCreateSchema.partial();
