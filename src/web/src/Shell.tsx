@@ -12,11 +12,14 @@ import { EmpreendimentoForm } from './features/empreendimentos/components/Empree
 import type { Empreendimento } from './features/empreendimentos/types';
 import { listContratos } from './features/contratos/api';
 import { ContratoForm } from './features/contratos/components/ContratoForm';
+import { MeusContratos } from './features/contratos/components/MeusContratos';
 import type { Contrato } from './features/contratos/types';
 import { listContas, exportContasUrl, authHeader } from './features/contas/api';
 import { ContaForm } from './features/contas/components/ContaForm';
 import { ContaTable } from './features/contas/components/ContaTable';
 import type { Conta } from './features/contas/types';
+
+type ActiveTab = 'painel' | 'contratos';
 
 interface ShellProps {
   onLogout: () => void;
@@ -25,6 +28,7 @@ interface ShellProps {
 }
 
 export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
+  const [activeTab, setActiveTab] = useState<ActiveTab>('painel');
   const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]);
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [contas, setContas] = useState<Conta[]>([]);
@@ -119,6 +123,22 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
           <p className="eyebrow">Rentify</p>
           <h1>Painel de recebíveis</h1>
         </div>
+        <nav className="landing-nav" style={{ marginTop: '0.5rem' }}>
+          <a
+            href="#painel"
+            onClick={(e) => { e.preventDefault(); setActiveTab('painel'); }}
+            style={{ color: activeTab === 'painel' ? 'var(--ink)' : undefined }}
+          >
+            Painel
+          </a>
+          <a
+            href="#contratos"
+            onClick={(e) => { e.preventDefault(); setActiveTab('contratos'); }}
+            style={{ color: activeTab === 'contratos' ? 'var(--ink)' : undefined }}
+          >
+            Meus Contratos
+          </a>
+        </nav>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <button
             className="ghost theme-toggle"
@@ -132,55 +152,62 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
           <button className="ghost" onClick={logout}>Sair</button>
         </div>
       </header>
-
       {error && <p className="error">{error}</p>}
 
-      <Dashboard
-        dashboard={dashboard}
-        empreendimentos={empreendimentos}
-        dashboardEmpreendimentoId={dashboardEmpreendimentoId}
-        setDashboardEmpreendimentoId={setDashboardEmpreendimentoId}
-        dashboardMes={dashboardMes}
-        setDashboardMes={setDashboardMes}
-        onDeleteEmpreendimento={handleDeleteEmpreendimento}
-      />
+      {activeTab === 'painel' && (
+        <>
+          <Dashboard
+            dashboard={dashboard}
+            empreendimentos={empreendimentos}
+            dashboardEmpreendimentoId={dashboardEmpreendimentoId}
+            setDashboardEmpreendimentoId={setDashboardEmpreendimentoId}
+            dashboardMes={dashboardMes}
+            setDashboardMes={setDashboardMes}
+            onDeleteEmpreendimento={handleDeleteEmpreendimento}
+          />
 
-      <section className="grid-two">
-        <EmpreendimentoForm onCreated={load} showToast={showToast} />
-        <ContratoForm empreendimentos={empreendimentos} onCreated={load} showToast={showToast} />
-      </section>
+          <section className="grid-two">
+            <EmpreendimentoForm onCreated={load} showToast={showToast} />
+            <ContratoForm empreendimentos={empreendimentos} onCreated={load} showToast={showToast} />
+          </section>
 
-      <ContaForm contratos={contratos} onCreated={load} showToast={showToast} />
+          <ContaForm contratos={contratos} onCreated={load} showToast={showToast} />
 
-      <section className="panel">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Operação</p>
-            <h2>Grid de contas</h2>
-          </div>
-          <button onClick={handleExportExcel}>Exportar Excel</button>
-        </div>
-        <div className="filters">
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Todos os status</option>
-            <option value="PENDENTE">Pendente</option>
-            <option value="PAGO">Pago</option>
-            <option value="EM_ATRASO">Em atraso</option>
-          </select>
-          <select value={empreendimentoId} onChange={(e) => setEmpreendimentoId(e.target.value)}>
-            <option value="">Todos empreendimentos</option>
-            {empreendimentos.map((emp) => (
-              <option key={emp.id} value={emp.id}>{emp.nome}</option>
-            ))}
-          </select>
-          <select value={conta} onChange={(e) => setConta(e.target.value)}>
-            <option value="">Todas as contas</option>
-            <option value="RECEITA">Receita</option>
-            <option value="DESPESA">Despesa</option>
-          </select>
-        </div>
-        <ContaTable contas={contas} onPaid={load} showToast={showToast} />
-      </section>
+          <section className="panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Operação</p>
+                <h2>Grid de contas</h2>
+              </div>
+              <button onClick={handleExportExcel}>Exportar Excel</button>
+            </div>
+            <div className="filters">
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">Todos os status</option>
+                <option value="PENDENTE">Pendente</option>
+                <option value="PAGO">Pago</option>
+                <option value="EM_ATRASO">Em atraso</option>
+              </select>
+              <select value={empreendimentoId} onChange={(e) => setEmpreendimentoId(e.target.value)}>
+                <option value="">Todos empreendimentos</option>
+                {empreendimentos.map((emp) => (
+                  <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                ))}
+              </select>
+              <select value={conta} onChange={(e) => setConta(e.target.value)}>
+                <option value="">Todas as contas</option>
+                <option value="RECEITA">Receita</option>
+                <option value="DESPESA">Despesa</option>
+              </select>
+            </div>
+            <ContaTable contas={contas} onPaid={load} showToast={showToast} />
+          </section>
+        </>
+      )}
+
+      {activeTab === 'contratos' && (
+        <MeusContratos showToast={showToast} />
+      )}
 
       <ToastContainer toast={toast} />
     </main>

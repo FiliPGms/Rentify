@@ -1,0 +1,209 @@
+/* ── Meus Contratos – CSS Module ──────────────────────────────── */
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionHead {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.sectionTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.sectionCount {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── Action bar ──────────────────────────────────────────────── */
+.actionBar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.actionBtn {
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background-color 150ms ease, transform 100ms ease, opacity 150ms ease;
+}
+
+.actionBtn:active {
+  transform: scale(0.98);
+}
+
+.actionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rescindirBtn {
+  composes: actionBtn;
+  color: #ffffff;
+  background: var(--danger);
+}
+
+.rescindirBtn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.renovarBtn {
+  composes: actionBtn;
+  color: #ffffff;
+  background: var(--brand);
+}
+
+.renovarBtn:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+/* ── Contract list ───────────────────────────────────────────── */
+.contractList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Contract card ───────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  transition: border-color 150ms ease;
+}
+
+.card:hover {
+  border-color: var(--brand);
+}
+
+.cardSelected {
+  composes: card;
+  border-color: var(--brand);
+  background: var(--brand-light);
+}
+
+.cardCheckbox {
+  all: revert;
+  cursor: pointer;
+  accent-color: var(--brand);
+  margin: 0;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.cardMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ── Status badge ────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.badgeAtivo {
+  composes: badge;
+  color: #00873c;
+  background: var(--brand-light);
+  border: 1px solid rgba(0, 200, 83, 0.15);
+}
+
+.badgeFinalizado {
+  composes: badge;
+  color: var(--muted);
+  background: rgba(120, 120, 120, 0.08);
+  border: 1px solid var(--line);
+}
+
+.badgeRenovado {
+  composes: badge;
+  color: #1565c0;
+  background: rgba(21, 101, 192, 0.08);
+  border: 1px solid rgba(21, 101, 192, 0.15);
+}
+
+.badgeRescindido {
+  composes: badge;
+  color: #d32f2f;
+  background: var(--danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .card {
+    grid-template-columns: auto 1fr;
+  }
+
+  .badge {
+    grid-column: 2;
+  }
+
+  .sectionHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
