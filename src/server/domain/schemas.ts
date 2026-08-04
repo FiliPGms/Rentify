@@ -36,8 +36,12 @@ export const empreendimentoUpdateSchema = empreendimentoCreateSchema.partial();
 export const contratoCreateSchema = z.object({
   empreendimentoId: z.string().uuid(),
   nomeInquilino: z.string().min(2).max(140),
+  dataInicio: dateOnly,
+  dataFim: dateOnly,
   dataVencimentoPadrao: dateOnly,
-  status: z.enum(['ATIVO', 'INATIVO']).default('ATIVO')
+  multaAtraso: z.coerce.number().min(0).max(100),
+  jurosMensal: z.coerce.number().min(0).max(100),
+  indiceReajuste: z.enum(['IGPM', 'IPCA', 'INPC'])
 });
 
 export const contratoUpdateSchema = contratoCreateSchema
@@ -46,7 +50,12 @@ export const contratoUpdateSchema = contratoCreateSchema
 
 export const contratoListSchema = z.object({
   empreendimentoId: z.string().uuid().optional(),
-  status: z.enum(['ATIVO', 'INATIVO']).optional()
+  status: z.enum(['ATIVO', 'FINALIZADO', 'RENOVADO', 'RESCINDIDO']).optional()
+});
+
+export const contratoBatchStatusSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1),
+  status: z.enum(['FINALIZADO', 'RENOVADO', 'RESCINDIDO'])
 });
 
 export const contaCreateSchema = z.object({

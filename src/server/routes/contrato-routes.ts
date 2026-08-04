@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  contratoBatchStatusSchema,
   contratoCreateSchema,
   contratoListSchema,
   contratoUpdateSchema
@@ -8,6 +9,7 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
+  batchUpdateStatus,
   createContrato,
   deleteContrato,
   listContratos,
@@ -32,6 +34,19 @@ contratoRoutes.post(
   asyncHandler(async (req, res) => {
     const data = await createContrato((req as AuthenticatedRequest).user.id, req.body);
     sendCreated(res, data);
+  })
+);
+
+contratoRoutes.patch(
+  '/batch-status',
+  validateBody(contratoBatchStatusSchema),
+  asyncHandler(async (req, res) => {
+    const data = await batchUpdateStatus(
+      (req as AuthenticatedRequest).user.id,
+      req.body.ids,
+      req.body.status
+    );
+    sendOk(res, data);
   })
 );
 

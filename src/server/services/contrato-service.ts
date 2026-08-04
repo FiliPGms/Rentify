@@ -10,10 +10,28 @@ const includeContrato = {
   }
 };
 
+/** Auto-finaliza contratos ATIVOS cuja dataFim já passou */
+async function autoFinalizarContratos(usuarioId: string) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  await prisma.contrato.updateMany({
+    where: {
+      status: 'ATIVO',
+      dataFim: { lt: hoje },
+      empreendimento: { usuarioId }
+    },
+    data: { status: 'FINALIZADO' }
+  });
+}
+
 export async function listContratos(
   usuarioId: string,
   filters: { empreendimentoId?: string; status?: ContratoStatus }
 ) {
+  // Auto-finaliza antes de listar
+  await autoFinalizarContratos(usuarioId);
+
   return prisma.contrato.findMany({
     where: {
       ...(filters.empreendimentoId ? { empreendimentoId: filters.empreendimentoId } : {}),
@@ -30,8 +48,12 @@ export async function createContrato(
   input: {
     empreendimentoId: string;
     nomeInquilino: string;
+    dataInicio: string;
+    dataFim: string;
     dataVencimentoPadrao: string;
-    status: ContratoStatus;
+    multaAtraso: number;
+    jurosMensal: number;
+    indiceReajuste: string;
   }
 ) {
   await assertOwnsEmpreendimento(usuarioId, input.empreendimentoId);
@@ -39,8 +61,13 @@ export async function createContrato(
     data: {
       empreendimentoId: input.empreendimentoId,
       nomeInquilino: input.nomeInquilino,
+      dataInicio: parseDateOnly(input.dataInicio),
+      dataFim: parseDateOnly(input.dataFim),
       dataVencimentoPadrao: parseDateOnly(input.dataVencimentoPadrao),
-      status: input.status
+      multaAtraso: input.multaAtraso,
+      jurosMensal: input.jurosMensal,
+      indiceReajuste: input.indiceReajuste as any,
+      status: 'ATIVO'
     },
     include: includeContrato
   });
@@ -49,18 +76,60 @@ export async function createContrato(
 export async function updateContrato(
   usuarioId: string,
   id: string,
-  input: Partial<{ nomeInquilino: string; dataVencimentoPadrao: string; status: ContratoStatus }>
+  input: Partial<{
+    nomeInquilino: string;
+    dataInicio: string;
+    dataFim: string;
+    dataVencimentoPadrao: string;
+    multaAtraso: number;
+    jurosMensal: number;
+    indiceReajuste: string;
+  }>
 ) {
   await assertOwnsContrato(usuarioId, id);
   return prisma.contrato.update({
     where: { id },
     data: {
       ...(input.nomeInquilino ? { nomeInquilino: input.nomeInquilino } : {}),
+      ...(input.dataInicio ? { dataInicio: parseDateOnly(input.dataInicio) } : {}),
+      ...(input.dataFim ? { dataFim: parseDateOnly(input.dataFim) } : {}),
       ...(input.dataVencimentoPadrao
         ? { dataVencimentoPadrao: parseDateOnly(input.dataVencimentoPadrao) }
         : {}),
-      ...(input.status ? { status: input.status } : {})
+      ...(input.multaAtraso !== undefined ? { multaAtraso: input.multaAtraso } : {}),
+      ...(input.jurosMensal !== undefined ? { jurosMensal: input.jurosMensal } : {}),
+      ...(input.indiceReajuste ? { indiceReajuste: input.indiceReajuste as any } : {})
     },
+    include: includeContrato
+  });
+}
+
+export async function batchUpdateStatus(
+  usuarioId: string,
+  ids: string[],
+  status: ContratoStatus
+) {
+  // Verifica se todos os contratos pertencem ao usuário
+  const found = await prisma.contrato.findMany({
+    where: {
+      id: { in: ids },
+      empreendimento: { usuarioId }
+    },
+    select: { id: true }
+  });
+
+  if (found.length !== ids.length) {
+    throw new HttpError(404, 'NOT_FOUND', 'Um ou mais contratos não foram encontrados.');
+  }
+
+  await prisma.contrato.updateMany({
+    where: { id: { in: ids } },
+    data: { status }
+  });
+
+  // Retorna os contratos atualizados
+  return prisma.contrato.findMany({
+    where: { id: { in: ids } },
     include: includeContrato
   });
 }

@@ -9,7 +9,9 @@ datasource db {
 
 enum ContratoStatus {
   ATIVO
-  INATIVO
+  FINALIZADO
+  RENOVADO
+  RESCINDIDO
 }
 
 enum ContaStatus {
@@ -41,6 +43,12 @@ enum FormaPagamento {
   CARTAO_CREDITO
   A_VISTA
   BOLETO
+}
+
+enum IndiceReajuste {
+  IGPM
+  IPCA
+  INPC
 }
 
 model Usuario {
@@ -94,7 +102,12 @@ model Contrato {
   id                   String               @id @default(uuid())
   empreendimentoId     String               @map("empreendimento_id")
   nomeInquilino        String               @map("nome_inquilino") @db.VarChar(140)
+  dataInicio           DateTime             @map("data_inicio") @db.Date
+  dataFim              DateTime             @map("data_fim") @db.Date
   dataVencimentoPadrao DateTime             @map("data_vencimento_padrao") @db.Date
+  multaAtraso          Decimal              @map("multa_atraso") @db.Decimal(5, 2)
+  jurosMensal          Decimal              @map("juros_mensal") @db.Decimal(5, 2)
+  indiceReajuste       IndiceReajuste       @map("indice_reajuste")
   status               ContratoStatus       @default(ATIVO)
   empreendimento       Empreendimento       @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
   contas               Conta[]
