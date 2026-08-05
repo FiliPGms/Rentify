@@ -72,6 +72,7 @@ export const contaListSchema = z.object({
   status: z.enum(['PENDENTE', 'PAGO', 'EM_ATRASO']).optional(),
   empreendimentoId: z.string().uuid().optional(),
   conta: z.enum(['RECEITA', 'DESPESA']).optional(),
+  mesReferencia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });

@@ -9,7 +9,21 @@ type ContaFilters = {
   status?: ContaStatus;
   empreendimentoId?: string;
   conta?: ContaConta;
+  mesReferencia?: string;
 };
+
+/**
+ * Constrói um range de datas para filtrar pelo mês de referência.
+ * Usa gte (primeiro dia) + lte (último dia) em vez de lt (primeiro dia do mês seguinte)
+ * para evitar o bug do MySQL que interpreta DATE '2026-08-01' como
+ * DATETIME '2026-08-01 00:00:00', incluindo erroneamente o dia 1 do mês seguinte.
+ */
+function buildMesRange(mes: string) {
+  const [year, month] = mes.split('-').map(Number);
+  const firstDay = new Date(Date.UTC(year, month - 1, 1));
+  const lastDay = new Date(Date.UTC(year, month, 0)); // dia 0 do mês seguinte = último dia do mês atual
+  return { gte: firstDay, lte: lastDay };
+}
 
 const includeConta = {
   contrato: {
@@ -25,6 +39,7 @@ function whereContas(usuarioId: string, filters: ContaFilters): Prisma.ContaWher
   return {
     ...(filters.status ? { status: filters.status } : {}),
     ...(filters.conta ? { conta: filters.conta } : {}),
+    ...(filters.mesReferencia ? { mesReferencia: buildMesRange(filters.mesReferencia) } : {}),
     contrato: {
       empreendimento: {
         usuarioId,

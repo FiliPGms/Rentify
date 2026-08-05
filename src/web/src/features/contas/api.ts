@@ -6,6 +6,7 @@ export function listContas(filters: ContaFilters) {
   if (filters.status) params.set('status', filters.status);
   if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
   if (filters.conta) params.set('conta', filters.conta);
+  if (filters.mesReferencia) params.set('mesReferencia', filters.mesReferencia);
   return request<Conta[]>(`/contas?${params.toString()}`);
 }
 
@@ -62,6 +63,7 @@ export function exportContasUrl(filters: ContaFilters): string {
   if (filters.status) params.set('status', filters.status);
   if (filters.empreendimentoId) params.set('empreendimentoId', filters.empreendimentoId);
   if (filters.conta) params.set('conta', filters.conta);
+  if (filters.mesReferencia) params.set('mesReferencia', filters.mesReferencia);
   return `/api/contas/export?${params.toString()}`;
 }
 
