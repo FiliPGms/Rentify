@@ -38,6 +38,7 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
   const [status, setStatus] = useState('');
   const [empreendimentoId, setEmpreendimentoId] = useState('');
   const [conta, setConta] = useState('');
+  const [contaMes, setContaMes] = useState('');
 
   // Filtros do dashboard
   const [dashboardEmpreendimentoId, setDashboardEmpreendimentoId] = useState('');
@@ -59,7 +60,7 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
       const [nextEmpreendimentos, nextContratos, nextContas, nextDashboard] = await Promise.all([
         listEmpreendimentos(),
         listContratos(),
-        listContas({ status, empreendimentoId, conta }),
+        listContas({ status, empreendimentoId, conta, mesReferencia: contaMes || undefined }),
         getDashboard(dashboardEmpreendimentoId, dashboardMes)
       ]);
       setEmpreendimentos(nextEmpreendimentos);
@@ -73,7 +74,7 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
 
   useEffect(() => {
     void load();
-  }, [status, empreendimentoId, dashboardEmpreendimentoId, dashboardMes, conta]);
+  }, [status, empreendimentoId, dashboardEmpreendimentoId, dashboardMes, conta, contaMes]);
 
   function logout() {
     clearToken();
@@ -93,7 +94,7 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
 
   async function handleExportExcel() {
     try {
-      const response = await fetch(exportContasUrl({ status, empreendimentoId, conta }), {
+      const response = await fetch(exportContasUrl({ status, empreendimentoId, conta, mesReferencia: contaMes || undefined }), {
         headers: authHeader()
       });
       if (!response.ok) {
@@ -198,6 +199,18 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
                 <option value="">Todas as contas</option>
                 <option value="RECEITA">Receita</option>
                 <option value="DESPESA">Despesa</option>
+              </select>
+              <select value={contaMes} onChange={(e) => setContaMes(e.target.value)}>
+                <option value="">Todos os meses</option>
+                {(dashboard?.mesesDisponiveis ?? []).map((m) => {
+                  const [y, mo] = m.split('-');
+                  const label = new Date(Number(y), Number(mo) - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+                  return (
+                    <option key={m} value={m}>
+                      {label.charAt(0).toUpperCase() + label.slice(1)}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <ContaTable contas={contas} onPaid={load} showToast={showToast} />

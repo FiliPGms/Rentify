@@ -23,4 +23,5 @@ export interface ContaFilters {
   status?: string;
   empreendimentoId?: string;
   conta?: string;
+  mesReferencia?: string;
 }
