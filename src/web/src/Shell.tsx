@@ -76,7 +76,10 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
     void load();
   }, [status, empreendimentoId, dashboardEmpreendimentoId, dashboardMes, conta, contaMes]);
 
-  function logout() {
+  async function logout() {
+    try {
+      await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch { /* ignora erro de rede no logout */ }
     clearToken();
     onLogout();
   }
@@ -95,6 +98,7 @@ export function Shell({ onLogout, theme, onToggleTheme }: ShellProps) {
   async function handleExportExcel() {
     try {
       const response = await fetch(exportContasUrl({ status, empreendimentoId, conta, mesReferencia: contaMes || undefined }), {
+        credentials: 'include',
         headers: authHeader()
       });
       if (!response.ok) {
